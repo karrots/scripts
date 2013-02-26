@@ -14,7 +14,7 @@ if [ -n "$var1" ]
   done
 fi
 #rm -rRvf /mnt/* >> /root/cgpbackup.log 2>&1
-mount -t cifs //192.168.10.185/backup /mnt --verbose  -o username=backup@sdco.local,password=***,rw >>/root/cgpbackup.log 2>&1
+mount -t cifs //192.168.1.1/backup /mnt --verbose  -o username=backup@sdco.local,password=***,rw >>/root/cgpbackup.log 2>&1
 echo "2. Backup." >> /root/cgpbackup.log
 date >> /root/cgpbackup.log
 if [ -d /mnt/cgp/backup ]
