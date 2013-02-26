@@ -1,0 +1,46 @@
+#!/bin/bash
+# dynamipsd          This shell script takes care of starting and stopping
+#                    dinamips hypervisor.
+#
+# chkconfig: - 58 74
+# description: dynamips is the Cisco Hypervisor.
+
+### BEGIN INIT INFO
+# Provides: dynamipsd
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Should-Start: $syslog $named 
+# Should-Stop: $syslog $named
+# Short-Description: start and stop dynamipsd
+# Description: Dynamips is a Cisco Simulator(Hypervisor) 
+### END INIT INFO
+
+case $1 in
+    start)
+     if [ -e ~user/tmp/dynamips.lock ]
+        then
+    	    echo "Dynamips already running at PID `cat ~user/tmp/dynamips.lock`, try \"stop\" switch parameter."
+    	else
+    	    mkdir ~user/tmp/dynamips
+    	    cd ~user/tmp/dynamips
+    	    nohup /usr/bin/dynamips -H 192.168.1.197:7200 --filepid ~user/tmp/dynamips/dynamips.lock  -l ~user/logs/dynamips.log &>~user/logs/dynamips.err &
+    fi
+     ;;
+    stop)
+     if [ -e ~user/tmp/dynamips/dynamips.lock ]
+        then
+	     kill `cat ~user/tmp/dynamips/dynamips.lock`
+    	     rm -fR ~user/tmp/dynamips
+    	else
+    	    DYNPID=`/sbin/pidof dynamips`
+    	    if [ $DYNPID ]
+    		then
+    	    	    echo "Dynamips started manually at PID `/sbin/pidof dynamips`?"
+    	    else
+    		echo "Dynamips not running?"
+    	    fi
+     fi
+     ;;
+    *)
+     echo "Usage: start|stop"
+esac
