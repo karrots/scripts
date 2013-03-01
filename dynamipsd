@@ -17,14 +17,13 @@
 
 case $1 in
     start)
-     if [ -e ~user/tmp/dynamips.lock ]
+     if [ -e ~user/tmp/dynamips/dynamips.lock ]
         then
-    	    echo "Dynamips already running at PID `cat ~user/tmp/dynamips.lock`, try \"stop\" switch parameter."
+    	    echo "Dynamips already running at PID `cat ~user/tmp/dynamips/dynamips.lock`, try \"stop\" switch parameter"
     	    EXVAR=2
     	else
-    	    mkdir ~user/tmp/dynamips
-    	    cd ~user/tmp/dynamips
-    	    nohup /usr/bin/dynamips -H 192.168.1.197:7200 --filepid ~user/tmp/dynamips/dynamips.lock  -l ~user/logs/dynamips.log &>~user/logs/dynamips.err &
+    	    /bin/su - user -c "/bin/mkdir ~user/tmp/dynamips"
+    	    /bin/su - user -c "cd ~user/tmp/dynamips ; nohup /usr/bin/dynamips -H 192.168.1.197:7200 --filepid ~user/tmp/dynamips/dynamips.lock  -l ~user/logs/dynamips.log &>~user/logs/dynamips.err &"
     	    EXVAR=0
     fi
      ;;
@@ -35,20 +34,20 @@ case $1 in
     	     rm -fR ~user/tmp/dynamips
     	     EXVAR=0
     	else
-    	    DYNPID=`/sbin/pidof dynamips`
-    	    if [ $DYNPID ]
-    		then
-    	    	    echo "Dynamips started manually at PID `/sbin/pidof dynamips`?"
-    	    	    EXVAR=1
-    	    else
-    		echo "Dynamips not running?"
-    		EXVAR=1
-    	    fi
+    	 DYNPID=`/sbin/pidof dynamips`
+    	 echo $DYNPID
+    	 if [ $DYNPID ]
+    	    then
+    	     echo "Dynamips started manually at PID  `/sbin/pidof dynamips`?"
+    	     EXVAR=1
+    	 else
+    	    echo "Dynamips not running?"
+    	    EXVAR=1
+    	 fi
      fi
      ;;
     *)
      echo "Usage: start|stop"
      EXVAR=2
 esac
-
 exit $EXVAR
