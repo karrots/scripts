@@ -1,6 +1,6 @@
 #!/bin/bash
 # dynamipsd          This shell script takes care of starting and stopping
-#                    dinamips hypervisor.
+#                    dynamips hypervisor.
 #
 # chkconfig: - 58 74
 # description: dynamips is the Cisco Hypervisor.
@@ -15,23 +15,24 @@
 # Description: Dynamips is a Cisco Simulator(Hypervisor) 
 ### END INIT INFO
 
+DYNDIR=~user/tmp/dynamips
+
 case $1 in
     start)
-     if [ -e ~user/tmp/dynamips/dynamips.lock ]
+     if [ -e $DYNDIR/dynamips.lock ]
         then
-    	    echo "Dynamips already running at PID `cat ~user/tmp/dynamips/dynamips.lock`, try \"stop\" switch parameter"
+    	    echo "Dynamips already running at PID `cat $DYNDIR/dynamips.lock`, try \"stop\" switch parameter"
     	    EXVAR=2
     	else
-    	    /bin/su - user -c "/bin/mkdir ~user/tmp/dynamips"
-    	    /bin/su - user -c "cd ~user/tmp/dynamips ; nohup /usr/bin/dynamips -H 192.168.1.197:7200 --filepid ~user/tmp/dynamips/dynamips.lock  -l ~user/logs/dynamips.log &>~user/logs/dynamips.err &"
+    	    /bin/su - user -c "/bin/mkdir $DYNDIR; cd $DYNDIR ; /usr/bin/nohup /usr/bin/dynamips -H 192.168.1.197:7200 --filepid $DYNDIR/dynamips.lock  -l ~user/logs/dynamips.log &>~user/logs/dynamips.err &"
     	    EXVAR=0
     fi
      ;;
     stop)
-     if [ -e ~user/tmp/dynamips/dynamips.lock ]
+     if [ -e $DYNDIR/dynamips.lock ]
         then
-	     kill `cat ~user/tmp/dynamips/dynamips.lock`
-    	     rm -fR ~user/tmp/dynamips
+	     kill `cat $DYNDIR/dynamips.lock`
+    	     rm -fR $DYNDIR
     	     EXVAR=0
     	else
     	 DYNPID=`/sbin/pidof dynamips`
