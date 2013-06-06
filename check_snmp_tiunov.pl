@@ -10,7 +10,7 @@ use utils qw(%ERRORS);
 &SNMP::loadModules("ALL");
 &SNMP::initMib();
 # VARIABLES
-my $comm = 'sdco_it';
+my $comm;
 my $sver = '2c';
 my $oid = 'sysName';
 my $ins = '';
