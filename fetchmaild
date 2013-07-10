@@ -1,0 +1,65 @@
+#!/bin/bash
+# fetchmaild         This shell script takes care of starting and stopping
+#                    fetchmail for my user.
+#
+# chkconfig: - 58 74
+# description: Fetchmail fetching mail from mailserver.
+
+### BEGIN INIT INFO
+# Provides: fetchmaild
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Should-Start: $syslog $named 
+# Should-Stop: $syslog $named
+# Short-Description: start and stop fetchmaild
+# Description: Fetchmail fetching mail from mailserver. 
+### END INIT INFO
+
+FETCHMAILHOME=~user/tmp/fetchmail
+
+case $1 in
+    start)
+     if [ -e $FETCHMAILHOME/fetchmail.pid ]
+        then
+    	    echo "Fetchmail already running at PID `cat $FETCHMAILHOME/.fetchmail.pid`, try \"stop\" switch parameter"
+    	    EXVAR=2
+    	else
+    	    /bin/su - user -c "/bin/mkdir $FETCHMAILHOME; /bin/cp -pf ~user/.fetchmailrc $FETCHMAILHOME/fetchmailrc ;export FETCHMAILHOME=~user/tmp/fetchmail; /usr/bin/fetchmail -vv"
+    	    EXVAR=0
+     fi
+     ;;
+    stop)
+     if [ -e $FETCHMAILHOME/fetchmail.pid ]
+        then
+	     kill `/usr/bin/head -1 $FETCHMAILHOME/fetchmail.pid`
+    	     rm -fR $FETCHMAILHOME
+    	     EXVAR=0
+    	else
+    	 FETCHPID=`/sbin/pidof fetchmail`
+    	 echo $FETCHPID
+    	 if [ $FETCHPID ]
+    	   then
+    	    echo "Fetchmail started manually at PID  `/sbin/pidof fetchmail`?"
+			echo -n "Kill fetchmail?[y/n]: "
+			read KILFETCH
+			if [ "$KILFETCH" = "y" ]
+			  then
+                            echo "Kill fetchmail"
+			    kill $FETCHPID 
+                            rm -fR $FETCHMAILHOME
+			fi
+    	    EXVAR=1
+    	 else
+    	    echo "Fetchmail not running?"
+    	    EXVAR=1
+    	 fi
+     fi
+     ;;
+	fuckyou)
+	  echo FUCK YOU!
+	 ;;
+    *)
+     echo "Usage: start|stop|fuckyou"
+     EXVAR=2
+esac
+exit $EXVAR
