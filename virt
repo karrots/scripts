@@ -5,8 +5,12 @@ if [ "$(whoami)" != 'root' ]
   echo "You are not a root, $0 do not start."
   exit 1
 fi
+### SOME VAR
+# HOST MANAGMENT IP
+IP=192.168.1.184
+
 ### START SCRIPT ###
-echo -e "Hello, this is the script for create/delete Virtual Machine on II centos linux.\n"
+echo -e "Hello, this is the script for create/delete Virtual Machine on MONITORING system.\n"
 echo -e "What do you want to do?\n Create Mashine [1]\n Delete Mashine [2]"
 echo -n "WHAT: "
 read WHAT
@@ -15,7 +19,7 @@ then
  echo "Start create the virtual mashine."
  YES=y
  ### LOOP FOR CREATE VM ###
- while [ $YES = 'y' ]
+ while [ $YES == 'y' ]
  do
   ### NAME ###
   echo -n "What name of the VM?: "
@@ -34,25 +38,72 @@ then
    then
     CPUNUMBER=2
   fi
+
   ### OS TYPE ###
   echo -e "What is OS type? \nWindows[1]\nLinux (the best)[2]"
-  echo -n "OSTYPE: "
+  echo -n "OSTYPE [linux]: "
   read OSTYPE
-  if [ -z $OSTYPE -o $OSTYPE = '2' ]
-	 then
-	  OSTYPE=linux
+  if [ -z "$OSTYPE" -o "$OSTYPE" == '2' ]
+         then
+          OSTYPE=linux
   else
    OSTYPE=windows
   fi
+
+  ### DISK SIZE ###
+  echo -n "What amount of hdd size (in Gigabytes)? [10]:"
+  read DISKSIZE
+  if [ -z $DISKSIZE ]
+   then
+    DISKSIZE=10
+  fi
+  ### VIDEO ###
+  echo -e "What video use: \nSPICE[1]\nVNC[2]"
+  echo -n "VIDEO [VNC]: "
+  read VIDEO
+  if [ -z "$VIDEO" -o "$VIDEO" == '2' ]
+   then
+    VIDEO="--graphics vnc,listen=$IP"
+   else
+    VIDEO="--graphics spice,listen=$IP --video qxl --channel spicevmc,target_type=virtio"
+  fi
+  ### NETWORK ###
+  echo -e "Which network interface you want to use?: \n Bridge [1]\n NAT [2]"
+  echo -n "NET [bridge]: "
+  read NETWORK
+  if [ -z "$NETWORK" -o "$NETWORK" == '1' ]
+   then
+    NETWORK=BRIDGE
+   else
+    NETWORK=NAT
+   fi
+  if [ $NETWORK == 'NAT' ]
+   then
+    echo "Select the NAT-network and enter its name:"
+    /usr/bin/virsh  net-list | /bin/grep NAT | /bin/awk '{print $1}'
+    echo -n "NET: "
+    read NETWORK
+    NETWORK="--network=network=$NETWORK,model=virtio"
+   else
+    echo "Select the BRIDGE-network and enter its name:"
+    /usr/sbin/brctl show | /bin/grep vlan | /bin/awk '{print $1}'
+    echo -n "NET: "
+    read NETWORK
+    NETWORK="--network=bridge=$NETWORK,model=virtio"
+   fi
   ### INSTALLATION FILES ###
   echo -n "What is th installation file location? [iso/url]: "
   read INSTALLATION
-  if [ $INSTALLATION = 'iso' ]
-   then
+   if [ -z $INSTALLATION ]
+    then
+     echo -e "\nUsing default RDK repository.\n"
+     INSTALLATION="-l http://192.168.1.175/os/redhat/6.4/x86_64/rdk"
+   elif [ $INSTALLATION == 'iso' ]
+    then
      echo -n "Enter the ISO file location: "
      read INSTALLATION
      INSTALLATION="-c $INSTALLATION"
-   elif [ $INSTALLATION = 'url' ]
+   elif [ $INSTALLATION == 'url' ]
     then
      echo -n "Enter the URL for installation: "
      read INSTALLATION
@@ -61,56 +112,15 @@ then
      echo "BAD ARGUMENT!"
      exit 2
    fi
-  ### DISK SIZE ###
-  echo -n "What amount of hdd size (in Gigabytes)? [10]:"
-  read DISKSIZE
-  if [ -z $DISKSIZE ]
-   then
-    DISKSIZE=10
-  fi
-
-  ### VIDEO ###
-  echo -e "What video use: \nSPICE[1]\nVNC[2]"
-  echo -n "VIDEO: "
-  read VIDEO
-  if [ -z $VIDEO -o $VIDEO = '2' ]
-   then
-    VIDEO="--graphics vnc,listen=192.168.1.197"
-   else
-    VIDEO="--graphics spice,listen=192.168.1.197 --video qxl --channel spicevmc,target_type=virtio"
-  fi
-  ### NETWORK ###
-  echo -e "Which network interface you want to use?: \n NAT [1]\n Bridge [2]"
-  echo -n "NET: "
-  read NETWORK
-  if [ -z $NETWORK -o $NETWORK = '1' ]
-   then
-    NETWORK=NAT
-   else
-    NETWORK=BRIDGE
-   fi
-  if [ $NETWORK = 'NAT' ]
-   then
-    echo "Select the NAT-network and enter its name:"
-    /usr/bin/virsh  net-list | /bin/grep NAT | /bin/awk '{print $1}'
-    echo -n "NET: "
-    read NETWORK
-    NETWORK="--network=network=$NETWORK"
-   else
-    echo "Select the BRIDGE-network and enter its name:"
-    /usr/sbin/brctl show | /bin/grep vlan | /bin/awk '{print $1}'
-    echo -n "NET: "
-    read NETWORK
-    NETWORK="--network=bridge=$NETWORK"
-   fi
+   ### OK, VERIFY
    echo "All setting is collected. We use the following command-line:"
-   echo -e "virt-install -n $MACHINENAME\n -r $MACHINEMEMORY\n --cpu host\n --vcpus=$CPUNUMBER\n $INSTALLATION\n --disk pool=default,size=$DISKSIZE\n --os-type=$OSTYPE\n $VIDEO\n $NETWORK\n --accelerate --hvm"
+   echo -e "virt-install -n $MACHINENAME\n -r $MACHINEMEMORY\n --cpu host\n --vcpus=$CPUNUMBER\n $INSTALLATION\n --disk pool=default,size=$DISKSIZE,bus=virtio\n --os-type=$OSTYPE\n $VIDEO\n $NETWORK\n --accelerate --hvm --noreboot --noautoconsole --wait=0"
    echo -n "Do you want to save this settings and start installation? [y/n]: "
    read YES
    echo
    if [ $YES = 'y' ]
     then
-     /usr/bin/virt-install -n $MACHINENAME -r $MACHINEMEMORY --cpu host --vcpus=$CPUNUMBER $INSTALLATION --disk pool=default,size=$DISKSIZE --os-type=$OSTYPE $VIDEO $NETWORK --accelerate --hvm
+     /usr/bin/virt-install -n $MACHINENAME -r $MACHINEMEMORY --cpu host --vcpus=$CPUNUMBER $INSTALLATION --disk pool=default,size=$DISKSIZE,bus=virtio --os-type=$OSTYPE $VIDEO $NETWORK --accelerate --hvm --noreboot --noautoconsole --wait=0
      echo
      /usr/bin/virsh list --state-running | /bin/grep $MACHINENAME
    else
@@ -118,32 +128,31 @@ then
    fi
    echo -n "Start the another installation? [y/n]: "
    read YES
-   echo -n "May be you want to delete VM? [y/n]: "
-   read WHAT
-   if [ $WHAT = 'y' ]
-    then
-	 WHAT=2
-	else
-	 WHAT=1
-   fi
  done
+ echo -n "May be you want to delete VM? [y/n]: "
+   read WHAT
+   if [ $WHAT == 'y' ]
+    then
+         WHAT=2
+        else
+         WHAT=1
+   fi
 fi
-if [ $WHAT = '2' ]
+if [ $WHAT == '2' ]
  then
   echo "Select mashine to delete:"
   /usr/bin/virsh list --all | /bin/awk '{print $2}' | /usr/bin/tail -n +2
   echo -n "DESTROY: "
   read DESTROY
-  /usr/bin/virsh destroy $DESTROY && /usr/bin/virsh undefine $DESTROY --managed-save --remove-all-storage
+  /usr/bin/virsh destroy $DESTROY ; /usr/bin/virsh undefine $DESTROY --managed-save --remove-all-storage
   /usr/bin/virsh list --all
   YES=n
 fi
-
 if [ "$YES" != 'y' -a "$YES" != 'n' ]
  then
-  echo "Something went wrong. Exit script for create Virtual Machine on II centos linux."
+  echo "Something went wrong. Exit script."
   exit 2
  else
-  echo "Exit script for create Virtual Machine on II centos linux."
+  echo "Exit script for create Virtual Machine on MONITORING system."
   exit 0
 fi
