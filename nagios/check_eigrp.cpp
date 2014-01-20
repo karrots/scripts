@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
 		if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
 			for (vars = response->variables; vars; vars = vars->next_variable) {
 				if (vars->val.integer != 0) {
-					long int* p = vars->val.integer;
-					long long int PEERCOUNT = *p;
+
+					long long int PEERCOUNT = *(vars->val.integer);
 //Nagios check
 					string PEERCOUNTstr=to_string(PEERCOUNT);
 					if (PEERCOUNTstr != globalArgs.NEIGHBORS){
