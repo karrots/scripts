@@ -53,10 +53,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'a':
 				globalArgs.AS = optarg;
+				break;
 			case 'h':
-				if ( optarg == "-h"){
 				usage(argv[0]);
-				}
 				break;
 			default:
 				break;
