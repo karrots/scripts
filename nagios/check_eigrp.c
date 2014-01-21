@@ -50,7 +50,7 @@ static void* snmpopen( char* community, const char* hostname){
 	return snmp_open(&session);
 }
 
-static char* snmpget (void *snmpsession, char *oidvalue, char *buffer){
+static void* snmpget (void *snmpsession, char *oidvalue, char *buffer){
 	struct snmp_session *ss;
 	oid anOID[MAX_OID_LEN];
 	size_t anOID_len = MAX_OID_LEN;
