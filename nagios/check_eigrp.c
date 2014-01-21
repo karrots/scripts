@@ -8,7 +8,7 @@ enum exitcode { OK, WARNING, CRITICAL, UNKNOWN };
 
 static void usage(char* name)
 {
-    printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
+	printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
 	printf("Options:\n\t-h, \tShow this help message;\n");
 	printf("\t-H, \tSpecify the hostname of router;\n");
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 				usage(argv[0]);
 				break;
 			default:
-				break;
+				usage(argv[0]);
 		}
 	}
 
@@ -89,57 +89,57 @@ int main(int argc, char *argv[])
 
 		ss = snmp_open(&session);
 		
-		if (!ss) {
-    			snmp_perror("ERROR");
-				snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
-       			exit(UNKNOWN);
-   		}
+		if (ss) {
+			char PEERCOUNTOID[38];
+			strcpy(PEERCOUNTOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
+			strcat(PEERCOUNTOID, globalArgs.AS);
 
-		char PEERCOUNTOID[38];
-		strcpy(PEERCOUNTOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
-		strcat(PEERCOUNTOID, globalArgs.AS);
-
-		pdu = snmp_pdu_create(SNMP_MSG_GET);
+			pdu = snmp_pdu_create(SNMP_MSG_GET);
 
 //OK, get the current peer count from router
-		read_objid(PEERCOUNTOID, anOID, &anOID_len);
+			read_objid(PEERCOUNTOID, anOID, &anOID_len);
 
-		snmp_add_null_var(pdu, anOID, anOID_len);
+			snmp_add_null_var(pdu, anOID, anOID_len);
 
-		if (snmp_synch_response(ss, pdu, &response) == STAT_SUCCESS) {
-			if (response->errstat == SNMP_ERR_NOERROR) {
-				vars = response->variables;
+			if (snmp_synch_response(ss, pdu, &response) == STAT_SUCCESS) {
+				if (response->errstat == SNMP_ERR_NOERROR) {
+					vars = response->variables;
 //Copy the current peercount to array:				
-				char PEERCOUNT[3];
-				if (snprint_value(PEERCOUNT, sizeof(PEERCOUNT), vars->name, vars->name_length, vars) != -1) {
+					char PEERCOUNT[3];
+					if (snprint_value(PEERCOUNT, sizeof(PEERCOUNT), vars->name, vars->name_length, vars) != -1) {
 //Nagios check
-					if (strcmp(PEERCOUNT, "0") == 0 ){
-						ERROR=CRITICAL;
-						fprintf(stderr, "CRITICAL: This router has no EIGRP neighbors.\n");
-					} else if (strcmp(PEERCOUNT, globalArgs.NEIGHBORS) != 0){
-						ERROR=WARNING;
-						fprintf(stderr, "WARNING: Current neighbors counts is %s but schould be %s.\n", PEERCOUNT, globalArgs.NEIGHBORS);
+						if (strcmp(PEERCOUNT, "0") == 0 ){
+							ERROR=CRITICAL;
+							fprintf(stderr, "CRITICAL: This router has no EIGRP neighbors.\n");
+						} else if (strcmp(PEERCOUNT, globalArgs.NEIGHBORS) != 0){
+							ERROR=WARNING;
+							fprintf(stderr, "WARNING: Current neighbors counts is %s but schould be %s.\n", PEERCOUNT, globalArgs.NEIGHBORS);
+						} else {
+							ERROR=OK;
+							fprintf(stderr, "OK: Neighbors count is %s.\n", PEERCOUNT);
+						}
+//End of Nagios check
 					} else {
-						ERROR=OK;
-						fprintf(stderr, "OK: Neighbors count is %s.\n", PEERCOUNT);
+						ERROR=UNKNOWN;
+						fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
 					}
 				} else {
 					ERROR=UNKNOWN;
-					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
+					fprintf(stderr, "Error in packet\nReason: %s\n",
+					snmp_errstring(response->errstat));
 				}
 			} else {
-					ERROR=UNKNOWN;
-					fprintf(stderr, "Error in packet\nReason: %s\n",
-            		snmp_errstring(response->errstat));
-			}
-//End of Nagios check
- 		} else {
 				ERROR=UNKNOWN;
 				snmp_sess_perror("ERROR: ", ss);
+			}
+		} else {
+			snmp_perror("ERROR");
+			snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
+			exit(UNKNOWN);
 		}
 		if (response) {
-     			snmp_free_pdu(response);
-				snmp_close(ss);
+			snmp_free_pdu(response);
+			snmp_close(ss);
 		}
 	}
 	return ERROR;
