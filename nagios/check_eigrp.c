@@ -19,7 +19,7 @@ static void usage(char* name)
 // Structure for command-line arguments
 struct globalArgs_t {
 	const char 	*HOSTNAME;	//Hostname of monitoring router;
-	char 		*COMMUNITY;	//SNMP Community;
+	char		*COMMUNITY;	//SNMP Community;
 	const char 	*NEIGHBORS;	//Neighbors count;
 	const char 	*AS;		//AS number of monitoring router.
 } globalArgs;
