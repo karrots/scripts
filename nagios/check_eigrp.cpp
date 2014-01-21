@@ -3,26 +3,24 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <string>
 #include <unistd.h>
-#include <iostream>
 using namespace std;
 
-static void usage(string name)
+static void usage(char* name)
 {
-    cerr << "Usage: " << name << " -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n "
-              << "Options:\n"
-              << "\t-h, \tShow this help message;\n"
-              << "\t-H, \tSpecify the hostname of router;\n"
-	      << "\t-c, \tSpecify the SNMP community of router;\n"
-	      << "\t-a, \tSpecify the EIGRP AS number of router;\n"
-	      << "\t-p, \tSpecify the neighbors count of router."
-              << endl;
+    printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
+	printf("Options:\n\t-h, \tShow this help message;\n");
+	printf("\t-H, \tSpecify the hostname of router;\n");
+	printf("\t-c, \tSpecify the SNMP community of router;\n");
+	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
+	printf("\t-p, \tSpecify the neighbors count of router.\n");
+	exit(3);
 }
-
+// Structure for command line arguments
 struct globalArgs_t {
-	const char *HOSTNAME;	//Hostname of monitoring router;
-	char *COMMUNITY;	//SNMP Community;
-	const char *NEIGHBORS;	//Neighbors count;
-	string AS;				//AS number of monitoring router.
+	const char 	*HOSTNAME;	//Hostname of monitoring router;
+	char 		*COMMUNITY;	//SNMP Community;
+	const char 	*NEIGHBORS;	//Neighbors count;
+	string 		AS;			//AS number of monitoring router.
 } globalArgs;
 
 static const char *optString = "H:c:p:a:h";
@@ -31,16 +29,18 @@ int main(int argc, char *argv[])
 {
 
 //Nagios plugin exit status:
-	int OK=0, WARNING=1, CRITICAL=2, UNKNOWN=3, USAGE=5;
+	int OK=0, WARNING=1, CRITICAL=2, UNKNOWN=3;
 	int ERROR=OK;
 
+//Inicialization of command line arguments
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS=0;
 	globalArgs.AS="";
 
-	int opt = getopt(argc, argv, optString);
-	while(opt!=-1){
+//Command line arguments parsing
+	int opt;
+	while(-1 != (opt = getopt(argc, argv, optString))){
 		switch( opt ) {
 			case 'H':
 				globalArgs.HOSTNAME = optarg;
@@ -60,15 +60,15 @@ int main(int argc, char *argv[])
 			default:
 				break;
 		}
-		opt = getopt(argc, argv, optString);
 	}
 
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS=="0" || globalArgs.AS==""){
-		ERROR=USAGE;
+		usage(argv[0]);
 	} else {
 
+		netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
 //Ok, starting the SNMP session:		
-		
+				
 		struct snmp_session session, *ss;
 		struct snmp_pdu *pdu;
 		struct snmp_pdu *response;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 		ss = snmp_open(&session);
 		
 		if (!ss) {
-    			snmp_perror("ack");
+    			snmp_perror("ERROR");
 				snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
        			exit(UNKNOWN);
    		}
@@ -101,36 +101,37 @@ int main(int argc, char *argv[])
 		string PEERCOUNTOID="1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."+globalArgs.AS;
 
 		pdu = snmp_pdu_create(SNMP_MSG_GET);
-		
+
+//OK, get the current peer count from router
 		read_objid(PEERCOUNTOID.c_str(), anOID, &anOID_len);
-		get_node(PEERCOUNTOID.c_str(), anOID, &anOID_len);
-		
+
 		snmp_add_null_var(pdu, anOID, anOID_len);
 
 		status = snmp_synch_response(ss, pdu, &response);
 
-		netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
-
 		if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
-			for (vars = response->variables; vars; vars = vars->next_variable) {
-				if (vars->val.integer != 0) {
 
-					long long int PEERCOUNT = *(vars->val.integer);
+				vars = response->variables;
+//Copy the current peercount to array:				
+				char PEERCOUNT[3];
+				if (snprint_value(PEERCOUNT, sizeof(PEERCOUNT), vars->name, vars->name_length, vars) != -1) {
 //Nagios check
-					string PEERCOUNTstr=to_string(PEERCOUNT);
-					if (PEERCOUNTstr != globalArgs.NEIGHBORS){
+					if (strcmp(PEERCOUNT, "0") == 0 ){
 						ERROR=CRITICAL;
-						fprintf(stderr, "Current neighbors counts is %d but schould be %s.\n", PEERCOUNT, globalArgs.NEIGHBORS);
+						fprintf(stderr, "CRITICAL: This router has no EIGRP neighbors.\n");
+					} else if (strcmp(PEERCOUNT, globalArgs.NEIGHBORS) != 0){
+						ERROR=WARNING;
+						fprintf(stderr, "WARNING: Current neighbors counts is %s but schould be %s.\n", PEERCOUNT, globalArgs.NEIGHBORS);
 					} else {
 						ERROR=OK;
-						fprintf(stderr, "Neighbor count is %ld.\n", PEERCOUNT);
+						fprintf(stderr, "OK: Neighbors count is %s.\n", PEERCOUNT);
 					}
-//End of Nagios check
 				} else {
 					ERROR=UNKNOWN;
+					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
 				}
-      		}
-		} else {
+//End of Nagios check
+ 		} else {
 			if (status == STAT_SUCCESS) {
 						ERROR=UNKNOWN;
 						fprintf(stderr, "Error in packet\nReason: %s\n",
@@ -145,9 +146,5 @@ int main(int argc, char *argv[])
 				snmp_close(ss);
 		}
 	}
-	if (ERROR==USAGE){
-		usage(argv[0]);
-	} else {	
-		return ERROR;
-	}
+	return ERROR;
 }
