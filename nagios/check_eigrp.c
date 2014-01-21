@@ -63,11 +63,11 @@ static char* snmpget (void *snmpsession, char *oidvalue, char *buffer){
 	//Ok, starting the SNMP session:		
 	if (ss) {
 
-	pdu = snmp_pdu_create(SNMP_MSG_GET);
+		pdu = snmp_pdu_create(SNMP_MSG_GET);
 
-//OK, get the current peer count from router
-	read_objid(oidvalue, anOID, &anOID_len);
-	snmp_add_null_var(pdu, anOID, anOID_len);
+		//OK, get the current peer count from router
+		read_objid(oidvalue, anOID, &anOID_len);
+		snmp_add_null_var(pdu, anOID, anOID_len);
 
 		if (snmp_synch_response(ss, pdu, &response) == STAT_SUCCESS) {
 			if (response->errstat == SNMP_ERR_NOERROR) {
