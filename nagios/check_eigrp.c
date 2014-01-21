@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 //Nagios plugin exit status:
-enum status { OK, WARNING, CRITICAL, UNKNOWN };
+enum exitcode { OK, WARNING, CRITICAL, UNKNOWN };
 
 static void usage(char* name)
 {
@@ -16,7 +16,7 @@ static void usage(char* name)
 	printf("\t-p, \tSpecify the neighbors count of router.\n");
 	exit(UNKNOWN);
 }
-// Structure for command line arguments
+// Structure for command-line arguments
 struct globalArgs_t {
 	const char 	*HOSTNAME;	//Hostname of monitoring router;
 	char 		*COMMUNITY;	//SNMP Community;
@@ -30,13 +30,13 @@ int main(int argc, char *argv[])
 {
 	int ERROR=OK;
 
-//Inicialization of command line arguments
+//Inicialization of command-line arguments
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS=0;
 	globalArgs.AS="";
 
-//Command line arguments parsing
+//Command-line arguments parsing
 	int opt;
 	while(-1 != (opt = getopt(argc, argv, optString))){
 		switch( opt ) {
