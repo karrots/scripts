@@ -65,6 +65,11 @@ int main(int argc, char *argv[])
 	} else {
 
 		netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
+//Create OID from concatenate EIGRP AS number:
+		char PEERCOUNTOID[38];
+		strcpy(PEERCOUNTOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
+		strcat(PEERCOUNTOID, globalArgs.AS);
+
 //Ok, starting the SNMP session:		
 				
 		struct snmp_session session, *ss;
@@ -90,9 +95,6 @@ int main(int argc, char *argv[])
 		ss = snmp_open(&session);
 		
 		if (ss) {
-			char PEERCOUNTOID[38];
-			strcpy(PEERCOUNTOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
-			strcat(PEERCOUNTOID, globalArgs.AS);
 
 			pdu = snmp_pdu_create(SNMP_MSG_GET);
 
