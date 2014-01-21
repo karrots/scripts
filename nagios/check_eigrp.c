@@ -4,7 +4,12 @@
 #include <unistd.h>
 
 //Nagios plugin exit status:
-enum exitcode { OK, WARNING, CRITICAL, UNKNOWN };
+enum EXITCODE { 
+	OK,
+	WARNING,
+	CRITICAL,
+	UNKNOWN
+} exitcode;
 
 static void usage(char* name)
 {
@@ -28,8 +33,6 @@ static const char *optString = "H:c:p:a:h";
 
 int main(int argc, char *argv[])
 {
-	int ERROR=OK;
-
 //Inicialization of command-line arguments
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
@@ -111,38 +114,38 @@ int main(int argc, char *argv[])
 					if (snprint_value(PEERCOUNT, sizeof(PEERCOUNT), vars->name, vars->name_length, vars) != -1) {
 //Nagios check
 						if (strcmp(PEERCOUNT, "0") == 0 ){
-							ERROR=CRITICAL;
+							exitcode=CRITICAL;
 							fprintf(stderr, "CRITICAL: This router has no EIGRP neighbors.\n");
 						} else if (strcmp(PEERCOUNT, globalArgs.NEIGHBORS) != 0){
-							ERROR=WARNING;
+							exitcode=WARNING;
 							fprintf(stderr, "WARNING: Current neighbors counts is %s but schould be %s.\n", PEERCOUNT, globalArgs.NEIGHBORS);
 						} else {
-							ERROR=OK;
+							exitcode=OK;
 							fprintf(stderr, "OK: Neighbors count is %s.\n", PEERCOUNT);
 						}
 //End of Nagios check
 					} else {
-						ERROR=UNKNOWN;
+						exitcode=UNKNOWN;
 						fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
 					}
 				} else {
-					ERROR=UNKNOWN;
+					exitcode=UNKNOWN;
 					fprintf(stderr, "Error in packet\nReason: %s\n",
 					snmp_errstring(response->errstat));
 				}
 			} else {
-				ERROR=UNKNOWN;
+				exitcode=UNKNOWN;
 				snmp_sess_perror("ERROR: ", ss);
 			}
 		} else {
 			snmp_perror("ERROR");
 			snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
-			exit(UNKNOWN);
+			exitcode=UNKNOWN;
 		}
 		if (response) {
 			snmp_free_pdu(response);
 			snmp_close(ss);
 		}
 	}
-	return ERROR;
+	return exitcode;
 }
