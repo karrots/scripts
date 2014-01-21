@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
 		size_t anOID_len = MAX_OID_LEN;
 		
 		struct variable_list *vars;
-		int status;
 		
 		init_snmp("check_eigrp");
 		
@@ -107,10 +106,8 @@ int main(int argc, char *argv[])
 
 		snmp_add_null_var(pdu, anOID, anOID_len);
 
-		status = snmp_synch_response(ss, pdu, &response);
-
-		if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
-
+		if (snmp_synch_response(ss, pdu, &response) == STAT_SUCCESS) {
+			if (response->errstat == SNMP_ERR_NOERROR) {
 				vars = response->variables;
 //Copy the current peercount to array:				
 				char PEERCOUNT[3];
@@ -130,16 +127,15 @@ int main(int argc, char *argv[])
 					ERROR=UNKNOWN;
 					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
 				}
+			} else {
+					ERROR=UNKNOWN;
+					fprintf(stderr, "Error in packet\nReason: %s\n",
+            		snmp_errstring(response->errstat));
+			}
 //End of Nagios check
  		} else {
-			if (status == STAT_SUCCESS) {
-						ERROR=UNKNOWN;
-						fprintf(stderr, "Error in packet\nReason: %s\n",
-               			snmp_errstring(response->errstat));
-     			} else {
-						ERROR=UNKNOWN;
-						snmp_sess_perror("ERROR: ", ss);
-			}
+				ERROR=UNKNOWN;
+				snmp_sess_perror("ERROR: ", ss);
 		}
 		if (response) {
      			snmp_free_pdu(response);
