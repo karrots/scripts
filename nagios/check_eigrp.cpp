@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
-#include <string>
 #include <unistd.h>
-using namespace std;
 
 //Nagios plugin exit status:
 int OK=0, WARNING=1, CRITICAL=2, UNKNOWN=3;
@@ -23,7 +21,7 @@ struct globalArgs_t {
 	const char 	*HOSTNAME;	//Hostname of monitoring router;
 	char 		*COMMUNITY;	//SNMP Community;
 	const char 	*NEIGHBORS;	//Neighbors count;
-	string 		AS;			//AS number of monitoring router.
+	const char 	*AS;		//AS number of monitoring router.
 } globalArgs;
 
 static const char *optString = "H:c:p:a:h";
@@ -98,12 +96,14 @@ int main(int argc, char *argv[])
        			exit(UNKNOWN);
    		}
 
-		string PEERCOUNTOID="1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."+globalArgs.AS;
+		char PEERCOUNTOID[38];
+		strcpy(PEERCOUNTOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
+		strcat(PEERCOUNTOID, globalArgs.AS);
 
 		pdu = snmp_pdu_create(SNMP_MSG_GET);
 
 //OK, get the current peer count from router
-		read_objid(PEERCOUNTOID.c_str(), anOID, &anOID_len);
+		read_objid(PEERCOUNTOID, anOID, &anOID_len);
 
 		snmp_add_null_var(pdu, anOID, anOID_len);
 
