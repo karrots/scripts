@@ -5,6 +5,9 @@
 #include <unistd.h>
 using namespace std;
 
+//Nagios plugin exit status:
+int OK=0, WARNING=1, CRITICAL=2, UNKNOWN=3;
+
 static void usage(char* name)
 {
     printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
@@ -13,7 +16,7 @@ static void usage(char* name)
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
 	printf("\t-p, \tSpecify the neighbors count of router.\n");
-	exit(3);
+	exit(UNKNOWN);
 }
 // Structure for command line arguments
 struct globalArgs_t {
@@ -27,9 +30,6 @@ static const char *optString = "H:c:p:a:h";
 
 int main(int argc, char *argv[])
 {
-
-//Nagios plugin exit status:
-	int OK=0, WARNING=1, CRITICAL=2, UNKNOWN=3;
 	int ERROR=OK;
 
 //Inicialization of command line arguments
