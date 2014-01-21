@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 //Nagios plugin exit status:
-enum EXIT { OK, WARNING, CRITICAL, UNKNOWN=3 };
+enum status { OK, WARNING, CRITICAL, UNKNOWN };
 
 static void usage(char* name)
 {
