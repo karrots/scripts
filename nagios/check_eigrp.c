@@ -2,7 +2,6 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
-#include <stdlib.h>
 
 //Nagios plugin exit status:
 enum EXITCODE { 
