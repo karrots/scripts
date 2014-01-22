@@ -144,18 +144,19 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 	} else {
 //Some integers for counts
-		int i, k, l, peerNum, asLengh;
+		int i, k, l, m, n, peerNum, asLengh;
 //Create OID from concatenate EIGRP AS number:
 		char peercountoid[37];
 //Create buffer for SNMP output value (peercount). 65535 is a maximum namber + \0
 		char peercount[6];
 //Create OID for peers IP-addresses
 		char peeripoid[100];
+		char count[12];
 //Create buffer for SNMP output value (peerip).
 		char peerip[18];
 //Buffers and mutex for IOS version check
 		char iosver[16];
-		char buffer[3];
+		char buffer[4];
 		int mutex=0;
 
 		strcpy(peercountoid, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
@@ -182,15 +183,14 @@ int main(int argc, char *argv[])
 	Get the IOS version
 */
 		snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeof(iosver));
-		buffer[2]='\0';
-		for (i=0;i<=1;++i)
-			buffer[i] = iosver[i+1];
+		strncpy(buffer, iosver, 3);
+		buffer[3]='\0';
 //If the major version of IOS 15 then check minor version
-		if (strcmp(buffer, "15") == 0) {
+		if (strcmp(buffer, "\"15") == 0) {
 			memset(buffer, 0, 3);
 			buffer[0] = iosver[4];
 			buffer[1] = '\0';
-//If minor version is3 or higher then change mutex
+//If minor version is 3 or higher then change mutex
 			if (atoi(buffer) >= 3)
 				mutex = 1;
 		}
@@ -199,49 +199,31 @@ int main(int argc, char *argv[])
 	Get the list of current EIGRP peers.
 */		
 		if (exitcode == WARNING || exitcode == OK){
-			strcpy(peeripoid, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
-			strcat(peeripoid, globalArgs.AS);
-			strcat(peeripoid, ".0");
 			
 			asLengh = strlen(globalArgs.AS);
 			peerNum = atoi(peercount);
 
 			for (i = 0; i<peerNum; i++) {
-				k = 1;
-				l = i;
-				while (i/10)
-					++k;
-				while (k--){
-					peeripoid[33+asLengh+k] = (char)(((int)'0')+l%10);
-					l = l/10;
-				}
-				snmpget(session, peeripoid, peerip, sizeof(peerip));
+//Get next IP address
+				memset(peeripoid, 0, 100);
+				memset(count, 0, 12);
+
+				strcpy(peeripoid, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
+				strcat(peeripoid, globalArgs.AS);
+				strcat(peeripoid, ".");
+
+				snprintf(count, 12, "%d", i);
+
+				snmpget(session, strcat(peeripoid, count), peerip, sizeof(peerip));
 /*
 	Print the list of current EIGRP peers.
 */
+				printf("\t%d: ", i+1);
 				if ( mutex == 1)
-					printf("\t%d: %s\n", i+1, peerip);
+					printf("%s\n", peerip);
 				else {
-					printf("\t%d: ", i+1);
-
-					for (k=0;k<=1;++k)
-						buffer[k] = peerip[k+1];
-					printf("%d", (int)strtol(buffer, NULL, 16));
-					printf(".");
-
-					for (k=0;k<=1;++k)
-						buffer[k] = peerip[k+4];
-					printf("%d", (int)strtol(buffer, NULL, 16));
-					printf(".");
-
-					for (k=0;k<=1;++k)
-						buffer[k] = peerip[k+7];
-					printf("%d", (int)strtol(buffer, NULL, 16));
-					printf(".");
-					for (k=0;k<=1;++k)
-						buffer[k] = peerip[k+10];
-					printf("%d", (int)strtol(buffer, NULL, 16));
-					printf("\n");
+					sscanf(peerip,"\"%x %x %x %x \"",&l, &k, &m, &n);
+					printf("\"%d.%d.%d.%d\"\n", l, k, m, n);
 				}
 			}
 		}
