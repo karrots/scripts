@@ -181,8 +181,13 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "OK: Neighbors count is %s:\n", peercount);
 		}
 //End of Nagios Check
+
 /*
-	Get the IOS version
+	Get the list of current EIGRP peers.
+*/		
+		if (exitcode == WARNING || exitcode == OK){
+/*
+	Get the IOS version for peers IP address converting
 */
 		snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeof(iosver));
 		strncpy(buffer, iosver, 3);
@@ -196,13 +201,11 @@ int main(int argc, char *argv[])
 				mutex = 1;
 		}
 /*
-	Get the list of current EIGRP peers.
-*/		
-		if (exitcode == WARNING || exitcode == OK){
+	Get IP addresses
+*/
 			peerNum = atoi(peercount);
 
 			for (i = 0; i<peerNum; i++) {
-//Get next IP address
 				memset(peeripoid, 0, 100);
 				memset(count, 0, 12);
 
