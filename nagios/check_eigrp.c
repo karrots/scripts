@@ -216,11 +216,20 @@ int main(int argc, char *argv[])
 */
 				printf("\t%d: ", i+1);
 				if ( mutex == 1)
-					printf("%s\n", peerip);
+					printf("%s", peerip);
 				else {
-					sscanf(peerip,"\"%x %x %x %x \"",&l, &k, &m, &n);
-					printf("\"%d.%d.%d.%d\"\n", l, k, m, n);
+					char *peerip_p = peerip;
+					printf("\"");
+					while ((peerip_p = strtok(peerip_p, "\" ")) != NULL){
+						sscanf(peerip_p,"%x",&l);
+						printf("%d.", l);
+						peerip_p = NULL;
+					}
+					printf("\"");
+					//sscanf(peerip,"\"%x %x %x %x \"",&l, &k, &m, &n);
+					//printf("\"%d.%d.%d.%d\"", l, k, m, n);
 				}
+				printf("\n");
 			}
 		}
 //End of Nagios Check
