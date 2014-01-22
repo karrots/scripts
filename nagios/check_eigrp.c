@@ -47,8 +47,8 @@ void* snmpopen( char* community, const char* hostname){
 	session.community_len = strlen(community);
 
 //Change this values if you need other timeout options
-	session.retries = 3;
-	session.timeout = 3000;
+	session.retries = 5;
+	session.timeout = 5000;
 
 	return snmp_open(&session);
 }
@@ -80,19 +80,19 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				vars = response->variables;
 				if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
 					exitcode=UNKNOWN;
-					fprintf(stderr, "UNKNOWN: Can't get value\nMay be this router has not EIGRP protocol?\n");
+					printf("UNKNOWN: May be this router has not EIGRP protocol?\n");
 					snmp_close(snmpsession);
 					exit(exitcode);
 				}
 			} else {
 				exitcode=UNKNOWN;
-				fprintf(stderr, "UNKNOWN: Error in packet\nReason: %s\n",
-				snmp_errstring(response->errstat));
+				printf("UNKNOWN: Error in packet\nReason: %s\n", snmp_errstring(response->errstat));
 				snmp_close(snmpsession);
 				exit(exitcode);
 			}
 		} else {
 			exitcode=UNKNOWN;
+			printf("UNKNOWN: Timeout\n");
 			snmp_sess_perror("UNKNOWN", snmpsession);
 			snmp_close(snmpsession);
 			exit(exitcode);
@@ -172,13 +172,13 @@ int main(int argc, char *argv[])
 //Start of Nagios Check
 		if (strcmp(peercount, "0") == 0 ){
 			exitcode=CRITICAL;
-			fprintf(stderr, "CRITICAL: No neighbors.\nThis router has no EIGRP neighbors.\n");
+			printf("CRITICAL: This router has no EIGRP neighbors.\n");
 		} else if (strcmp(peercount, globalArgs.NEIGHBORS) != 0){
 			exitcode=WARNING;
-			fprintf(stderr, "WARNING: Neighbor count has changed.\nCurrent neighbors counts is %s but schould be %s:\n", peercount, globalArgs.NEIGHBORS);
+			printf("WARNING: Current neighbors counts is %s but schould be %s:\n", peercount, globalArgs.NEIGHBORS);
 		} else {
 			exitcode=OK;
-			fprintf(stderr, "OK: Neighbors work fine.\nNeighbors count is %s:\n", peercount);
+			printf("OK: Neighbors count is %s:\n", peercount);
 		}
 //End of Nagios Check
 
