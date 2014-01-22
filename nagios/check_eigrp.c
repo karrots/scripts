@@ -11,6 +11,7 @@ enum EXITCODE {
 	UNKNOWN
 } exitcode;
 
+//Usage function, for printing help
 void usage(char* name)
 {
 	printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
@@ -31,6 +32,7 @@ struct globalArgs_t {
 
 const char *optString = "H:c:p:a:h";
 
+//This function open SNMP session to router
 void* snmpopen( char* community, const char* hostname){
 	
 	struct snmp_session session;
@@ -43,6 +45,8 @@ void* snmpopen( char* community, const char* hostname){
 	session.version = SNMP_VERSION_2c;
 	session.community = (u_char*) community;
 	session.community_len = strlen(community);
+
+//Change this values if you need other timeout options
 	session.retries = 3;
 	session.timeout = 3000;
 
@@ -56,6 +60,9 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 	oid anOID[MAX_OID_LEN];
 	size_t anOID_len = MAX_OID_LEN;
 	struct variable_list *vars;
+/*
+	PDU is a snmp protocol data unit.
+*/
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
@@ -79,20 +86,20 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				}
 			} else {
 				exitcode=UNKNOWN;
-				fprintf(stderr, "Error in packet\nReason: %s\n",
+				fprintf(stderr, "UNKNOWN: Error in packet\nReason: %s\n",
 				snmp_errstring(response->errstat));
 				snmp_close(snmpsession);
 				exit(exitcode);
 			}
 		} else {
 			exitcode=UNKNOWN;
-			snmp_sess_perror("ERROR", snmpsession);
+			snmp_sess_perror("UNKNOWN", snmpsession);
 			snmp_close(snmpsession);
 			exit(exitcode);
 		}
 	} else {
 		exitcode=UNKNOWN;
-		snmp_perror("ERROR");
+		snmp_perror("UNKNOWN");
 		snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
 		exit(exitcode);
 	}
@@ -192,7 +199,6 @@ int main(int argc, char *argv[])
 	Get the list of current EIGRP peers.
 */		
 		if (exitcode == WARNING || exitcode == OK){
-			
 			peerNum = atoi(peercount);
 
 			for (i = 0; i<peerNum; i++) {
@@ -211,7 +217,7 @@ int main(int argc, char *argv[])
 	Print the list of current EIGRP peers.
 */
 				printf("\t%d: ", i+1);
-				if ( mutex == 1)
+				if (mutex == 1)
 					printf("%s", peerip);
 				else {
 					char *peerip_p = peerip;
