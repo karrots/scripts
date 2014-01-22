@@ -80,7 +80,7 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				vars = response->variables;
 				if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
 					exitcode=UNKNOWN;
-					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
+					fprintf(stderr, "UNKNOWN: Can't get value\nMay be this router has not EIGRP protocol?\n");
 					snmp_close(snmpsession);
 					exit(exitcode);
 				}
@@ -172,13 +172,13 @@ int main(int argc, char *argv[])
 //Start of Nagios Check
 		if (strcmp(peercount, "0") == 0 ){
 			exitcode=CRITICAL;
-			fprintf(stderr, "CRITICAL: This router has no EIGRP neighbors.\n");
+			fprintf(stderr, "CRITICAL: No neighbors.\nThis router has no EIGRP neighbors.\n");
 		} else if (strcmp(peercount, globalArgs.NEIGHBORS) != 0){
 			exitcode=WARNING;
-			fprintf(stderr, "WARNING: Current neighbors counts is %s but schould be %s:\n", peercount, globalArgs.NEIGHBORS);
+			fprintf(stderr, "WARNING: Neighbor count has changed.\nCurrent neighbors counts is %s but schould be %s:\n", peercount, globalArgs.NEIGHBORS);
 		} else {
 			exitcode=OK;
-			fprintf(stderr, "OK: Neighbors count is %s:\n", peercount);
+			fprintf(stderr, "OK: Neighbors work fine.\nNeighbors count is %s:\n", peercount);
 		}
 //End of Nagios Check
 
