@@ -20,6 +20,7 @@ void usage(char* name)
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
 	printf("\t-p, \tSpecify the neighbors count of router.\n");
+	printf("\t-l, \tSpecify this key if you need to get list of neighbors (disabled by default)\n");
 	exit(UNKNOWN);
 }
 // Structure for command-line arguments
@@ -27,10 +28,11 @@ struct globalArgs_t {
 	const char 	*HOSTNAME;	//Hostname of monitoring router;
 	char		*COMMUNITY;	//SNMP Community;
 	const char 	*NEIGHBORS;	//Neighbors count;
-	const char 	*AS;		//AS number of monitoring router.
+	const char 	*AS;		//AS number of monitoring router;
+	int			noList;		//Get or not list of neighbors (disabled by default).
 } globalArgs;
 
-const char *optString = "H:c:p:a:h";
+const char *optString = "H:c:p:a:hl";
 
 //This function open SNMP session to router
 void* snmpopen( char* community, const char* hostname){
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS="0";
 	globalArgs.AS="";
+	globalArgs.noList=0;
 
 //Command-line arguments parsing
 	int opt;
@@ -131,6 +134,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'a':
 				globalArgs.AS = optarg;
+				break;
+			case 'l':
+				globalArgs.noList = 1;
 				break;
 			case 'h':
 				usage(argv[0]);
@@ -175,31 +181,31 @@ int main(int argc, char *argv[])
 			printf("CRITICAL: This router has no EIGRP neighbors.\n");
 		} else if (strcmp(peercount, globalArgs.NEIGHBORS) != 0){
 			exitcode=WARNING;
-			printf("WARNING: Current neighbors counts is %s but schould be %s:\n", peercount, globalArgs.NEIGHBORS);
+			printf("WARNING: Current neighbors counts is %s but schould be %s\n", peercount, globalArgs.NEIGHBORS);
 		} else {
 			exitcode=OK;
-			printf("OK: Neighbors count is %s:\n", peercount);
+			printf("OK: Neighbors count is %s\n", peercount);
 		}
 //End of Nagios Check
 
 /*
 	Get the list of current EIGRP peers.
 */		
-		if (exitcode == WARNING || exitcode == OK){
+		if ((exitcode == WARNING || exitcode == OK) && globalArgs.noList == 1){
 /*
 	Get the IOS version for peers IP address converting
 */
-		snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeof(iosver));
-		strncpy(buffer, iosver, 3);
-		buffer[3]='\0';
+			snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeof(iosver));
+			strncpy(buffer, iosver, 3);
+			buffer[3]='\0';
 //If the major version of IOS 15 then check minor version
-		if (strcmp(buffer, "\"15") == 0) {
-			memset(buffer, 0, 3);
-			snprintf(buffer, 2, "%c", iosver[4]);
+			if (strcmp(buffer, "\"15") == 0) {
+				memset(buffer, 0, 3);
+				snprintf(buffer, 2, "%c", iosver[4]);
 //If minor version is 3 or higher then change mutex
-			if (atoi(buffer) >= 3)
-				mutex = 1;
-		}
+				if (atoi(buffer) >= 3)
+					mutex = 1;
+			}
 /*
 	Get IP addresses
 */
