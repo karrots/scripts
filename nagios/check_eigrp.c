@@ -53,17 +53,14 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 
 	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
 
-	struct snmp_session *ss;
 	oid anOID[MAX_OID_LEN];
 	size_t anOID_len = MAX_OID_LEN;
 	struct variable_list *vars;
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
-	ss = snmpsession;
-
 	//Ok, starting the SNMP session:		
-	if (ss) {
+	if (snmpsession) {
 
 		pdu = snmp_pdu_create(SNMP_MSG_GET);
 
@@ -71,7 +68,7 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		read_objid(oidvalue, anOID, &anOID_len);
 		snmp_add_null_var(pdu, anOID, anOID_len);
 
-		if (snmp_synch_response(ss, pdu, &response) == STAT_SUCCESS) {
+		if (snmp_synch_response(snmpsession, pdu, &response) == STAT_SUCCESS) {
 			if (response->errstat == SNMP_ERR_NOERROR) {
 				vars = response->variables;
 				//print_value(vars->name, vars->name_length, vars);				
@@ -79,20 +76,20 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
 					exitcode=UNKNOWN;
 					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
-					snmp_close(ss);
+					snmp_close(snmpsession);
 					exit(exitcode);
 				}
 			} else {
 				exitcode=UNKNOWN;
 				fprintf(stderr, "Error in packet\nReason: %s\n",
 				snmp_errstring(response->errstat));
-				snmp_close(ss);
+				snmp_close(snmpsession);
 				exit(exitcode);
 			}
 		} else {
 			exitcode=UNKNOWN;
-			snmp_sess_perror("ERROR", ss);
-			snmp_close(ss);
+			snmp_sess_perror("ERROR", snmpsession);
+			snmp_close(snmpsession);
 			exit(exitcode);
 		}
 	} else {
