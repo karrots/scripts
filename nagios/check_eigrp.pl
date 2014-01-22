@@ -10,7 +10,7 @@ use utils qw(%ERRORS);
 &SNMP::loadModules("ALL");
 &SNMP::initMib();
 # VARIABLES
-my $comm;
+my $comm = 'sdco_it';
 my $sver = '2c';
 my $AS = 1;
 my $count;
@@ -25,27 +25,27 @@ my $vb;
 my $var;
 my $errnum = $ERRORS{'OK'};
 # MAIN
-## GET COMMAND LINE PARAMETERS
-### "-H" - HOST IP,
-### "-c" - COMMUNITY,
-### "-p" - GOOD NEIGHBORS COUNT,
+## GET COMMAND LINE PARAMETERS 
+### "-H" - HOST IP, 
+### "-c" - COMMUNITY, 
+### "-p" - GOOD NEIGHBORS COUNT, 
 ### "-AS" - EIGRP autonomous system value;
 while ( $arg = shift @ARGV ) {
         if ( $arg eq '-H') {
-                        $dest = shift @ARGV;
+			$dest = shift @ARGV;
         }
         elsif ( $arg eq '-c' ) {
-                        $comm = shift @ARGV;
+			$comm = shift @ARGV;
         }
-                elsif ( $arg eq '-p' ) {
+		elsif ( $arg eq '-p' ) {
             $count = shift @ARGV;
         }
-                elsif ( $arg eq '-AS' ) {
+		elsif ( $arg eq '-AS' ) {
             $AS = shift @ARGV;
         }
         else {
-                        print "ERROR: BAD ARGUMENTS.\n";
-                        exit $ERRORS{'UNKNOWN'};
+			print "ERROR: BAD ARGUMENTS.\n";
+			exit $ERRORS{'UNKNOWN'};
         }
 }
 ## SET OID
@@ -67,39 +67,39 @@ if ($sess->{ErrorNum}) {
         exit $ERRORS{'CRITICAL'};
 }
 else {
-        if ( $peercount =~ /^No/ ) {
-                print "ERROR \"$peercount\" querying $dest.\n";
-                exit $ERRORS{'UNKNOWN'};
-        }
-        else {
-                if ( $peercount != $count ) {
-                        print "WARNING: The number of neighbors has changed. Total neighbors is $peercount. Should be $count.\n";
-                        $errnum = $ERRORS{'WARNING'};
-                }
-                if ( $peercount < 2 ) {
-                        print "I have $peercount EIGRP neighbor:\n";
-                }
-                else {
-                        print "I have $peercount EIGRP neighbors:\n";
-                }
-                my $i;
-                my $j;
-                for ( $i = 0; $i < $peercount; $i++ ) {
-                        $vb = SNMP::Varbind->new(["$peeripoid.$i",'']);
-                        $peerip = $sess->get($vb);
-                        for ( $j =1; $j < 4; $j++) {
-                                $peerip =~ s/ /./;
-                        }
-                        $peerip =~ s/"//g;
-                        for ( $j=0; $j < 4; $j++ ) {
-                                $oktet = substr($peerip, 3*$j, 2);
-                                $oktet = hex($oktet);
-                                $substr = "$substr.$oktet";
-                        }
-                        $substr =~ s/.//;
-                        print "\t",$substr,"\n";
-                        $substr = '';
-                }
-        }
+	if ( $peercount =~ /^No/ ) {
+		print "ERROR \"$peercount\" querying $dest.\n";
+		exit $ERRORS{'UNKNOWN'};
+	}
+	else {
+		if ( $peercount != $count ) {
+			print "WARNING: The number of neighbors has changed. Total neighbors is $peercount. Should be $count.\n";
+			$errnum = $ERRORS{'WARNING'};
+		}
+		if ( $peercount < 2 ) {
+			print "I have $peercount EIGRP neighbor:\n";
+		}
+		else {
+			print "I have $peercount EIGRP neighbors:\n";
+		}
+		my $i;
+		my $j;
+		for ( $i = 0; $i < $peercount; $i++ ) {
+			$vb = SNMP::Varbind->new(["$peeripoid.$i",'']);
+			$peerip = $sess->get($vb);
+			for ( $j =1; $j < 4; $j++) {
+				$peerip =~ s/ /./;
+			}
+			$peerip =~ s/"//g;
+			for ( $j=0; $j < 4; $j++ ) {
+				$oktet = substr($peerip, 3*$j, 2);
+				$oktet = hex($oktet);
+				$substr = "$substr.$oktet";
+			}
+			$substr =~ s/.//;
+			print "\t",$substr,"\n";
+			$substr = '';
+		}
+	}
 }
 exit $errnum;
