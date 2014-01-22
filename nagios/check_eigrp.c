@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 	} else {
 //Some integers for counts
-		int i, k, l;
+		int i, k, l, peerNum, asLengh;
 //Create OID from concatenate EIGRP AS number:
 		char peercountoid[37];
 //Create buffer for SNMP output value (peercount). 65535 is a maximum namber + \0
@@ -185,10 +185,12 @@ int main(int argc, char *argv[])
 		buffer[2]='\0';
 		for (i=0;i<=1;++i)
 			buffer[i] = iosver[i+1];
+//If the major version of IOS 15 then check minor version
 		if (strcmp(buffer, "15") == 0) {
 			memset(buffer, 0, 3);
 			buffer[0] = iosver[4];
 			buffer[1] = '\0';
+//If minor version is3 or higher then change mutex
 			if (atoi(buffer) >= 3)
 				mutex = 1;
 		}
@@ -200,14 +202,17 @@ int main(int argc, char *argv[])
 			strcpy(peeripoid, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
 			strcat(peeripoid, globalArgs.AS);
 			strcat(peeripoid, ".0");
+			
+			asLengh = strlen(globalArgs.AS);
+			peerNum = atoi(peercount);
 
-			for (i = 0; i<=atoi(peercount)-1; i++) {
+			for (i = 0; i<peerNum; i++) {
 				k = 1;
 				l = i;
 				while (i/10)
 					++k;
 				while (k--){
-					peeripoid[33+strlen(globalArgs.AS)+k] = (char)(((int)'0')+l%10);
+					peeripoid[33+asLengh+k] = (char)(((int)'0')+l%10);
 					l = l/10;
 				}
 				snmpget(session, peeripoid, peerip, sizeof(peerip));
