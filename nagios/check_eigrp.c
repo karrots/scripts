@@ -59,7 +59,7 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
-	//Ok, starting the SNMP session:		
+	//If SNMP session is started, create pdu for OID and get the value		
 	if (snmpsession) {
 
 		pdu = snmp_pdu_create(SNMP_MSG_GET);
@@ -71,8 +71,6 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		if (snmp_synch_response(snmpsession, pdu, &response) == STAT_SUCCESS) {
 			if (response->errstat == SNMP_ERR_NOERROR) {
 				vars = response->variables;
-				//print_value(vars->name, vars->name_length, vars);				
-				//printf("YAHOO %zu and %zu\n", vars->name_length, buffersize);
 				if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
 					exitcode=UNKNOWN;
 					fprintf(stderr, "UNKNOWN: May be this router has not EIGRP protocol?\n");
@@ -108,7 +106,7 @@ int main(int argc, char *argv[])
 //Inicialization of command-line arguments
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
-	globalArgs.NEIGHBORS=0;
+	globalArgs.NEIGHBORS="0";
 	globalArgs.AS="";
 
 //Command-line arguments parsing
@@ -140,7 +138,7 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 	} else {
 //Some integers for counts
-		int i, k, l, m, n, peerNum, asLengh;
+		int i, peerNum;
 //Create OID from concatenate EIGRP AS number:
 		char peercountoid[37];
 //Create buffer for SNMP output value (peercount). 65535 is a maximum namber + \0
@@ -155,6 +153,7 @@ int main(int argc, char *argv[])
 		char buffer[4];
 		int mutex=0;
 
+		memset(peercountoid, 0, 100);
 		strcpy(peercountoid, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
 		strcat(peercountoid, globalArgs.AS);
 //Open SNMP session
@@ -162,7 +161,6 @@ int main(int argc, char *argv[])
 /*
 	Get the number of current EIGRP peers.
 */
-//And get value
 		snmpget(session, peercountoid, peercount, sizeof(peercount));
 //Start of Nagios Check
 		if (strcmp(peercount, "0") == 0 ){
@@ -175,6 +173,7 @@ int main(int argc, char *argv[])
 			exitcode=OK;
 			fprintf(stderr, "OK: Neighbors count is %s:\n", peercount);
 		}
+//End of Nagios Check
 /*
 	Get the IOS version
 */
@@ -184,19 +183,16 @@ int main(int argc, char *argv[])
 //If the major version of IOS 15 then check minor version
 		if (strcmp(buffer, "\"15") == 0) {
 			memset(buffer, 0, 3);
-			buffer[0] = iosver[4];
-			buffer[1] = '\0';
+			snprintf(buffer, 2, "%c", iosver[4]);
 //If minor version is 3 or higher then change mutex
 			if (atoi(buffer) >= 3)
 				mutex = 1;
 		}
-
 /*
 	Get the list of current EIGRP peers.
 */		
 		if (exitcode == WARNING || exitcode == OK){
 			
-			asLengh = strlen(globalArgs.AS);
 			peerNum = atoi(peercount);
 
 			for (i = 0; i<peerNum; i++) {
@@ -219,6 +215,7 @@ int main(int argc, char *argv[])
 					printf("%s", peerip);
 				else {
 					char *peerip_p = peerip;
+					int l;
 					printf("\"");
 					while ((peerip_p = strtok(peerip_p, "\" ")) != NULL){
 						sscanf(peerip_p,"%x",&l);
@@ -226,13 +223,10 @@ int main(int argc, char *argv[])
 						peerip_p = NULL;
 					}
 					printf("\"");
-					//sscanf(peerip,"\"%x %x %x %x \"",&l, &k, &m, &n);
-					//printf("\"%d.%d.%d.%d\"", l, k, m, n);
 				}
 				printf("\n");
 			}
 		}
-//End of Nagios Check
 		if (session)
 			snmp_close(session);
 	}
