@@ -90,12 +90,16 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				}
 			} else {
 				exitcode=UNKNOWN;
+				//Send stderr to stdout for nagios error handling
+				dup2(1, 2);
 				printf("UNKNOWN: Error in packet\nReason: %s\n", snmp_errstring(response->errstat));
 				snmp_close(snmpsession);
 				exit(exitcode);
 			}
 		} else {
 			exitcode=UNKNOWN;
+			//Send stderr to stdout for nagios error handling
+			dup2(1, 2);
 			snmp_sess_perror("UNKNOWN", snmpsession);
 			snmp_close(snmpsession);
 			exit(exitcode);
@@ -155,12 +159,10 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS=="0" || globalArgs.AS==""){
 		usage(argv[0]);
 	} else {
-//Send stderr to stdout by default for nagios error handling
-		dup2(1, 2);
 //Some integers for counts
 		int i, peerNum;
 //Create OID from concatenate EIGRP AS number:
-		char peercountoid[37];
+		char peercountoid[38];
 //Create buffer for SNMP output value (peercount). 65535 is a maximum namber + \0
 		char peercount[6];
 //Create OID for peers IP-addresses
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
 		char buffer[4];
 		int mutex=0;
 
-		memset(peercountoid, 0, 37);
+		memset(peercountoid, 0, 38);
 		strcpy(peercountoid, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
 		strcat(peercountoid, globalArgs.AS);
 //Open SNMP session
