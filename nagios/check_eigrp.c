@@ -21,7 +21,7 @@ void usage(char* name)
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
 	printf("\t-p, \tSpecify the neighbors count of router;\n");
 	printf("\t-t, \tSpecify the timeout of plugin, default is 3 seconds;\n");
-	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n");
+	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
 // Structure for command-line arguments
@@ -90,8 +90,6 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 				}
 			} else {
 				exitcode=UNKNOWN;
-				//Send stderr to stdout for nagios error handling
-				dup2(1, 2);
 				printf("UNKNOWN: Error in packet\nReason: %s\n", snmp_errstring(response->errstat));
 				snmp_close(snmpsession);
 				exit(exitcode);
@@ -106,6 +104,8 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		}
 	} else {
 		exitcode=UNKNOWN;
+		//Send stderr to stdout for nagios error handling
+		dup2(1, 2);
 		snmp_perror("UNKNOWN");
 		snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
 		exit(exitcode);
