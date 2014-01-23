@@ -19,8 +19,9 @@ void usage(char* name)
 	printf("\t-H, \tSpecify the hostname of router;\n");
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
-	printf("\t-p, \tSpecify the neighbors count of router.\n");
-	printf("\t-l, \tSpecify this key if you need to get list of neighbors (disabled by default)\n");
+	printf("\t-p, \tSpecify the neighbors count of router;\n");
+	printf("\t-t, \tSpecify the timeout of plugin, default is 3 seconds;\n");
+	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n");
 	exit(UNKNOWN);
 }
 // Structure for command-line arguments
@@ -30,12 +31,13 @@ struct globalArgs_t {
 	const char 	*NEIGHBORS;	//Neighbors count;
 	const char 	*AS;		//AS number of monitoring router;
 	int			noList;		//Get or not list of neighbors (disabled by default).
+	int			timeOut;	//Set timeout for plugin, default is 3 seconds.
 } globalArgs;
 
-const char *optString = "H:c:p:a:hl";
+const char *optString = "H:c:p:a:hlt:";
 
 //This function open SNMP session to router
-void* snmpopen( char* community, const char* hostname){
+void* snmpopen( char* community, const char* hostname, int timeout){
 	
 	struct snmp_session session;
 		
@@ -49,8 +51,8 @@ void* snmpopen( char* community, const char* hostname){
 	session.community_len = strlen(community);
 
 //Change this values if you need other timeout options
-	session.retries = 5;
-	session.timeout = 5000;
+	//session.retries = 5;
+	session.timeout = timeout*100000;
 
 	return snmp_open(&session);
 }
@@ -94,7 +96,6 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 			}
 		} else {
 			exitcode=UNKNOWN;
-			printf("UNKNOWN: Timeout\n");
 			snmp_sess_perror("UNKNOWN", snmpsession);
 			snmp_close(snmpsession);
 			exit(exitcode);
@@ -117,6 +118,7 @@ int main(int argc, char *argv[])
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS="0";
 	globalArgs.AS="";
+	globalArgs.timeOut=3;
 	globalArgs.noList=0;
 
 //Command-line arguments parsing
@@ -135,6 +137,9 @@ int main(int argc, char *argv[])
 			case 'a':
 				globalArgs.AS = optarg;
 				break;
+			case 't':
+				globalArgs.timeOut = atoi(optarg);
+				break;
 			case 'l':
 				globalArgs.noList = 1;
 				break;
@@ -150,6 +155,8 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS=="0" || globalArgs.AS==""){
 		usage(argv[0]);
 	} else {
+//Send stderr to stdout by default for nagios error handling
+		dup2(1, 2);
 //Some integers for counts
 		int i, peerNum;
 //Create OID from concatenate EIGRP AS number:
@@ -166,11 +173,11 @@ int main(int argc, char *argv[])
 		char buffer[4];
 		int mutex=0;
 
-		memset(peercountoid, 0, 100);
+		memset(peercountoid, 0, 37);
 		strcpy(peercountoid, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
 		strcat(peercountoid, globalArgs.AS);
 //Open SNMP session
-		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME);
+		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
 /*
 	Get the number of current EIGRP peers.
 */
