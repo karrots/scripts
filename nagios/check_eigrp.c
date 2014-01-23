@@ -49,10 +49,13 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 	session.version = SNMP_VERSION_2c;
 	session.community = (u_char*) community;
 	session.community_len = strlen(community);
-
-//Change this values if you need other timeout options
-	//session.retries = 5;
-	session.timeout = timeout*100000;
+/*
+	One attempt plus session.retries therefore
+	GLOBAL timeout = session.timeout*(1+session.retries)
+	Change this values if you need other timeout options:
+*/
+	session.retries = 2;
+	session.timeout = timeout*1000000/(session.retries+1);
 
 	return snmp_open(&session);
 }
