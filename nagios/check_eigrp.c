@@ -68,7 +68,7 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 		exit(UNKNOWN);
 	}
 }
-
+/*Here we get some information from device*/
 void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize){
 
 	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
