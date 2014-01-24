@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
 //Inicialization of command-line arguments
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
-	globalArgs.NEIGHBORS="0";
-	globalArgs.AS="";
+	globalArgs.NEIGHBORS=NULL;
+	globalArgs.AS=NULL;
 	globalArgs.timeOut=3;
 	globalArgs.noList=0;
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS=="0" || globalArgs.AS==""){
+	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
 //Create SNMP session
