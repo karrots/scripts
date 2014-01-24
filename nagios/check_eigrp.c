@@ -3,7 +3,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
 
-const char *VERSION = "0.6";
+const char *VERSION = "0.7";
 //Nagios plugin exit status:
 enum EXITCODE { 
 	OK,
@@ -154,7 +154,8 @@ int main(int argc, char *argv[])
 				globalArgs.AS = optarg;
 				break;
 			case 't':
-				globalArgs.timeOut = atoi(optarg);
+				if ((globalArgs.timeOut = atoi(optarg)) == 0)
+					globalArgs.timeOut = 3;
 				break;
 			case 'l':
 				globalArgs.noList = 1;
