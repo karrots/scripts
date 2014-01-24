@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 	} else {
 //Create SNMP session
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
-//Create buffer for snmp OID from concatenate EIGRP AS number:
+//Create buffer for snmp OID
 		char snmpOID[100];
 		memset(snmpOID, 0, 100);
 //Create buffer for SNMP output value (peercount). ~4G is a maximum namber + \0
