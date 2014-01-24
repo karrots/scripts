@@ -74,12 +74,12 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 	if (session_p){
 		return session_p;
 	} else {
-		exitcode=UNKNOWN;
+		//exitcode=UNKNOWN;
 		//Send stderr to stdout for nagios error handling
 		dup2(1, 2);
 		snmp_perror("UNKNOWN");
 		snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
-		exit(exitcode);
+		exit(UNKNOWN);
 	}
 }
 
@@ -107,24 +107,24 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		if (response->errstat == SNMP_ERR_NOERROR) {
 			vars = response->variables;
 			if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
-				exitcode=UNKNOWN;
+				//exitcode=UNKNOWN;
 				printf("UNKNOWN: May be this router has not EIGRP protocol?\n");
 				snmp_close(snmpsession);
-				exit(exitcode);
+				exit(UNKNOWN);
 			}
 		} else {
-			exitcode=UNKNOWN;
+			//exitcode=UNKNOWN;
 			printf("UNKNOWN: Error in packet\nReason: %s\n", snmp_errstring(response->errstat));
 			snmp_close(snmpsession);
-			exit(exitcode);
+			exit(UNKNOWN);
 		}
 	} else {
-		exitcode=UNKNOWN;
+		//exitcode=UNKNOWN;
 		//Send stderr to stdout for nagios error handling
 		dup2(1, 2);
 		snmp_sess_perror("UNKNOWN", snmpsession);
 		snmp_close(snmpsession);
-		exit(exitcode);
+		exit(UNKNOWN);
 	}
 	if (response) {
 		snmp_free_pdu(response);
