@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-const char *VERSION = "0.7";
+const char *VERSION = "0.81";
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
