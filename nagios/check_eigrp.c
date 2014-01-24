@@ -26,6 +26,16 @@ void usage(char* name)
 	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
+//Print the version of plugin
+void version()
+{
+	printf("check_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
+	printf("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	printf("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
+	exit(OK);
+}
 // Structure for command-line arguments
 struct globalArgs_t {
 	const char 	*HOSTNAME;	//Hostname of monitoring router;
@@ -154,12 +164,7 @@ int main(int argc, char *argv[])
 				globalArgs.noList = 1;
 				break;
 			case 'v':
-				printf("check_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
-				printf("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
-				printf("This is free software: you are free to change and redistribute it.\n");
-				printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-				printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
-				exit(OK);
+				version();
 				break;
 			case 'h':
 				usage(argv[0]);
