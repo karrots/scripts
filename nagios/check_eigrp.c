@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-const char *VERSION = "0.81";
+const char *VERSION = "0.82";
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
@@ -82,7 +82,7 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 	}
 }
 /*Here we get some information from device*/
-void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize){
+void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize){
 
 	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
 
