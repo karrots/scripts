@@ -36,18 +36,6 @@ void version()
 	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
 	exit(OK);
 }
-// Structure for command-line arguments
-struct globalArgs_t {
-	const char 	*HOSTNAME;	//Hostname of monitoring router;
-	char		*COMMUNITY;	//SNMP Community;
-	const char 	*NEIGHBORS;	//Neighbors count;
-	const char 	*AS;		//AS number of monitoring router;
-	int			noList;		//Get or not list of neighbors (disabled by default).
-	int			timeOut;	//Set timeout for plugin, default is 3 seconds.
-} globalArgs;
-
-const char *optString = "H:c:p:a:t:lhv";
-
 //This function open SNMP session to router
 void* snmpopen( char* community, const char* hostname, int timeout){
 	
@@ -126,6 +114,18 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		exit(UNKNOWN);
 	}
 }
+
+// Structure for command-line arguments
+struct globalArgs_t {
+	const char 	*HOSTNAME;	//Hostname of monitoring router;
+	char		*COMMUNITY;	//SNMP Community;
+	const char 	*NEIGHBORS;	//Neighbors count;
+	const char 	*AS;		//AS number of monitoring router;
+	int			noList;		//Get or not list of neighbors (disabled by default).
+	int			timeOut;	//Set timeout for plugin, default is 3 seconds.
+} globalArgs;
+
+const char *optString = "H:c:p:a:t:lhv";
 
 int main(int argc, char *argv[])
 {
