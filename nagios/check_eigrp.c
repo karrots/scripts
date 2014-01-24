@@ -2,6 +2,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
+#include <signal.h>
 
 const char *VERSION = "0.7";
 /*Nagios plugin exit status:*/
@@ -11,6 +12,18 @@ enum EXITCODE {
 	CRITICAL,
 	UNKNOWN
 } exitcode;
+
+// Structure for command-line arguments
+struct globalArgs_t {
+	const char 	*HOSTNAME;	/*Hostname of monitoring router;*/
+	char		*COMMUNITY;	/*SNMP Community;*/
+	const char 	*NEIGHBORS;	/*Neighbors count;*/
+	const char 	*AS;		/*AS number of monitoring router;*/
+	int			noList;		/*Get or not list of neighbors (disabled by default).*/
+	int			timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
+} globalArgs;
+
+const char *optString = "H:c:p:a:t:lhv";
 /*Usage function, for printing help*/
 void usage(char* name)
 {
@@ -114,18 +127,6 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 	}
 }
 
-// Structure for command-line arguments
-struct globalArgs_t {
-	const char 	*HOSTNAME;	/*Hostname of monitoring router;*/
-	char		*COMMUNITY;	/*SNMP Community;*/
-	const char 	*NEIGHBORS;	/*Neighbors count;*/
-	const char 	*AS;		/*AS number of monitoring router;*/
-	int			noList;		/*Get or not list of neighbors (disabled by default).*/
-	int			timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
-} globalArgs;
-
-const char *optString = "H:c:p:a:t:lhv";
-
 int main(int argc, char *argv[])
 {
 /*Inicialization of command-line arguments*/
@@ -174,6 +175,15 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
+/*Set the alarm timer if some problem occurs in UNIX socket*/
+	alarm(globalArgs.timeOut+3);
+	void alarmHandler()
+	{
+		snmp_close_sessions();
+		printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
+		exit(UNKNOWN);
+	}
+	signal(SIGALRM, alarmHandler);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
