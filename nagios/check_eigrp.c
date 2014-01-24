@@ -4,15 +4,14 @@
 #include <unistd.h>
 
 const char *VERSION = "0.7";
-//Nagios plugin exit status:
+/*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
 	WARNING,
 	CRITICAL,
 	UNKNOWN
 } exitcode;
-
-//Usage function, for printing help
+/*Usage function, for printing help*/
 void usage(char* name)
 {
 	printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
@@ -26,7 +25,7 @@ void usage(char* name)
 	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
-//Print the version of plugin
+/*Print the version of plugin*/
 void version()
 {
 	printf("check_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
@@ -36,7 +35,7 @@ void version()
 	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
 	exit(OK);
 }
-//This function open SNMP session to router
+/*This function open SNMP session to router*/
 void* snmpopen( char* community, const char* hostname, int timeout){
 	
 	struct snmp_session session, *session_p;
@@ -62,7 +61,7 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 	if (session_p){
 		return session_p;
 	} else {
-		//Send stderr to stdout for nagios error handling
+		/*Send stderr to stdout for nagios error handling*/
 		dup2(1, 2);
 		snmp_perror("UNKNOWN");
 		snmp_log(LOG_ERR, "Some error occured in SNMP session establishment.\n");
@@ -83,10 +82,10 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
-	//If SNMP session is started, create pdu for OID and get the value		
+	/*If SNMP session is started, create pdu for OID and get the value		*/
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 
-	//OK, get the SNMP vlaue from router
+	/*OK, get the SNMP vlaue from router*/
 	read_objid(oidvalue, anOID, &anOID_len);
 	snmp_add_null_var(pdu, anOID, anOID_len);
 
@@ -107,7 +106,7 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 			exit(UNKNOWN);
 		}
 	} else {
-		//Send stderr to stdout for nagios error handling
+		/*Send stderr to stdout for nagios error handling*/
 		dup2(1, 2);
 		snmp_sess_perror("UNKNOWN", snmpsession);
 		snmp_close(snmpsession);
@@ -117,19 +116,19 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 
 // Structure for command-line arguments
 struct globalArgs_t {
-	const char 	*HOSTNAME;	//Hostname of monitoring router;
-	char		*COMMUNITY;	//SNMP Community;
-	const char 	*NEIGHBORS;	//Neighbors count;
-	const char 	*AS;		//AS number of monitoring router;
-	int			noList;		//Get or not list of neighbors (disabled by default).
-	int			timeOut;	//Set timeout for plugin, default is 3 seconds.
+	const char 	*HOSTNAME;	/*Hostname of monitoring router;*/
+	char		*COMMUNITY;	/*SNMP Community;*/
+	const char 	*NEIGHBORS;	/*Neighbors count;*/
+	const char 	*AS;		/*AS number of monitoring router;*/
+	int			noList;		/*Get or not list of neighbors (disabled by default).*/
+	int			timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
 } globalArgs;
 
 const char *optString = "H:c:p:a:t:lhv";
 
 int main(int argc, char *argv[])
 {
-//Inicialization of command-line arguments
+/*Inicialization of command-line arguments*/
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS=NULL;
@@ -137,7 +136,7 @@ int main(int argc, char *argv[])
 	globalArgs.timeOut=3;
 	globalArgs.noList=0;
 
-//Command-line arguments parsing
+/*Command-line arguments parsing*/
 	int opt;
 	while((opt = getopt(argc, argv, optString)) != -1){
 		switch( opt ) {
@@ -175,12 +174,12 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
-//Create SNMP session
+/*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
-//Create buffer for snmp OID
+/*Create buffer for snmp OID*/
 		char snmpOID[100];
 		memset(snmpOID, 0, 100);
-//Create buffer for SNMP output value (peercount). ~4G is a maximum namber + \0
+/*Create buffer for SNMP output value (peercount). ~4G is a maximum namber + '\0' */
 		char peercount[12];
 		size_t sizeOfBuffer = sizeof(peercount);
 		memset(peercount, 0, sizeOfBuffer);
@@ -191,7 +190,7 @@ int main(int argc, char *argv[])
 	Get the number of current EIGRP peers.
 */
 		snmpget(session, snmpOID, peercount, sizeOfBuffer);
-//Start of Nagios Check
+/*Start of Nagios Check*/
 		if (strcmp(peercount, "0") == 0 ){
 			exitcode=CRITICAL;
 			printf("CRITICAL: This router has no EIGRP neighbors. |\n");
@@ -202,18 +201,18 @@ int main(int argc, char *argv[])
 			exitcode=OK;
 			printf("OK: Neighbors count is %s |\n", peercount);
 		}
-//End of Nagios Check
+/*End of Nagios Check*/
 /*
 	Get the list of current EIGRP peers.
 */		
 		if ((exitcode == WARNING || exitcode == OK) && globalArgs.noList == 1){
-//Some integers for counts
+/*Some integers for counts*/
 			int i, peerNum;
-//Create buffer for SNMP output value (midlBuff).
+/*Create buffer for SNMP output value (midlBuff).*/
 			char midlBuff[18];
 			size_t sizeOfBuffer = sizeof(midlBuff);
 			memset(midlBuff, 0, sizeOfBuffer);
-//Buffers and mutex for IOS version check
+/*Buffers and mutex for IOS version check*/
 			char* iosver = midlBuff;
 			char buffer[4];
 			int mutex=0;
@@ -223,11 +222,11 @@ int main(int argc, char *argv[])
 			snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeOfBuffer);
 			strncpy(buffer, iosver, 3);
 			buffer[3]='\0';
-//If the major version of IOS is 15 then check minor version
+/*If the major version of IOS is 15 then check minor version*/
 			if (strcmp(buffer, "\"15") == 0) {
 				memset(buffer, 0, 3);
 				snprintf(buffer, 2, "%c", iosver[4]);
-//If minor version is 3 or higher then change mutex
+/*If minor version is 3 or higher then change mutex*/
 				if (atoi(buffer) >= 3)
 					mutex = 1;
 			}
