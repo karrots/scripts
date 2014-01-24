@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-const char *VERSION = "0.82";
+const char *VERSION = "0.83";
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
@@ -176,13 +176,13 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 	} else {
 /*Set the alarm timer if some problem occurs in UNIX socket*/
-	alarm(globalArgs.timeOut+3);
-	void alarmHandler()
-	{
-		snmp_close_sessions();
-		printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
-		exit(UNKNOWN);
-	}
+		alarm(globalArgs.timeOut+1);
+		void alarmHandler()
+		{
+			snmp_close_sessions();
+			printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
+			exit(UNKNOWN);
+		}
 	signal(SIGALRM, alarmHandler);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
