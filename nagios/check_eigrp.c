@@ -3,7 +3,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
 
-const char *VERSION = "0.5";
+const char *VERSION = "0.6";
 //Nagios plugin exit status:
 enum EXITCODE { 
 	OK,
@@ -107,11 +107,14 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 			vars = response->variables;
 			if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
 				printf("UNKNOWN: May be this router has not EIGRP protocol?\n");
+				snmp_free_pdu(response);
 				snmp_close(snmpsession);
 				exit(UNKNOWN);
 			}
+			snmp_free_pdu(response);
 		} else {
 			printf("UNKNOWN: Error in packet\nReason: %s\n", snmp_errstring(response->errstat));
+			snmp_free_pdu(response);
 			snmp_close(snmpsession);
 			exit(UNKNOWN);
 		}
@@ -121,9 +124,6 @@ void* snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersiz
 		snmp_sess_perror("UNKNOWN", snmpsession);
 		snmp_close(snmpsession);
 		exit(UNKNOWN);
-	}
-	if (response) {
-		snmp_free_pdu(response);
 	}
 }
 
@@ -193,13 +193,13 @@ int main(int argc, char *argv[])
 //Start of Nagios Check
 		if (strcmp(peercount, "0") == 0 ){
 			exitcode=CRITICAL;
-			printf("CRITICAL: This router has no EIGRP neighbors.\n");
+			printf("CRITICAL: This router has no EIGRP neighbors. |\n");
 		} else if (strcmp(peercount, globalArgs.NEIGHBORS) != 0){
 			exitcode=WARNING;
-			printf("WARNING: Current neighbors counts is %s but schould be %s\n", peercount, globalArgs.NEIGHBORS);
+			printf("WARNING: Current neighbors counts is %s but schould be %s |\n", peercount, globalArgs.NEIGHBORS);
 		} else {
 			exitcode=OK;
-			printf("OK: Neighbors count is %s\n", peercount);
+			printf("OK: Neighbors count is %s |\n", peercount);
 		}
 //End of Nagios Check
 /*
