@@ -97,7 +97,7 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
-	/*If SNMP session is started, create pdu for OID and get the value		*/
+	/*If SNMP session is started, create pdu for OID and get the value*/
 	pdu = snmp_pdu_create(SNMP_MSG_GET);
 
 	/*OK, get the SNMP vlaue from router*/
@@ -130,7 +130,7 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 }
 /*
 	This finction hangle alarm signal (SIGALRM)
-	if some problem occurs in UNIX socket, etc.
+	if some problem occurs (in UNIX socket, etc).
 */
 void alarmHandler()
 {
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
-/*Set the alarm timer if some problem occurs in UNIX socket, etc.*/
+/*Set the alarm timer if some problem occurs (in UNIX socket, etc.)*/
 		struct sigaction alarmAct;
 		memset(&alarmAct, 0, sizeof(alarmAct));
 		alarmAct.sa_handler = alarmHandler;
