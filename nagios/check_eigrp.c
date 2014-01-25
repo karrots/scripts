@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 			printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
 			exit(UNKNOWN);
 		}
-	signal(SIGALRM, alarmHandler);
+		signal(SIGALRM, alarmHandler);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
