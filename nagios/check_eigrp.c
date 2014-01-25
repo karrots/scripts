@@ -8,8 +8,11 @@
 const char *VERSION = "0.83";
 =======
 const char *VERSION = "0.85";
+<<<<<<< HEAD
 >>>>>>> beta
 
+=======
+>>>>>>> beta
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
