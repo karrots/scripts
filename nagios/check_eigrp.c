@@ -13,7 +13,7 @@ enum EXITCODE {
 	UNKNOWN
 } exitcode;
 
-// Structure for command-line arguments
+/*Structure for command-line arguments*/
 struct globalArgs_t {
 	const char 	*HOSTNAME;	/*Hostname of monitoring router;*/
 	char		*COMMUNITY;	/*SNMP Community;*/
