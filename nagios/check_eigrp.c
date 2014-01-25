@@ -20,8 +20,8 @@ struct globalArgs_t {
 	char		*COMMUNITY;	/*SNMP Community;*/
 	const char 	*NEIGHBORS;	/*Neighbors count;*/
 	const char 	*AS;		/*AS number of monitoring router;*/
-	int			noList;		/*Get or not list of neighbors (disabled by default).*/
-	int			timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
+	int		noList;		/*Get or not list of neighbors (disabled by default).*/
+	int		timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
 } globalArgs;
 
 const char *optString = "H:c:p:a:t:lhv";
