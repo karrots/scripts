@@ -25,6 +25,7 @@ struct globalArgs_t {
 } globalArgs;
 
 const char *optString = "H:c:p:a:t:lhv";
+
 /*Usage function, for printing help*/
 void usage(char* name)
 {
@@ -128,6 +129,13 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 	}
 }
 
+void alarmHandler()
+{
+	snmp_close_sessions();
+	printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
+	exit(UNKNOWN);
+}
+
 int main(int argc, char *argv[])
 {
 /*Inicialization of command-line arguments*/
@@ -178,12 +186,6 @@ int main(int argc, char *argv[])
 	} else {
 /*Set the alarm timer if some problem occurs in UNIX socket*/
 		alarm(globalArgs.timeOut+1);
-		void alarmHandler()
-		{
-			snmp_close_sessions();
-			printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
-			exit(UNKNOWN);
-		}
 		signal(SIGALRM, alarmHandler);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
