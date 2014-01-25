@@ -166,8 +166,10 @@ int main(int argc, char *argv[])
 				globalArgs.AS = optarg;
 				break;
 			case 't':
-				if ((globalArgs.timeOut = atoi(optarg)) == 0)
+				if ((globalArgs.timeOut = atoi(optarg)) <= 0)
 					globalArgs.timeOut = 3;
+				else if (globalArgs.timeOut > 60)
+					globalArgs.timeOut = 60;
 				break;
 			case 'l':
 				globalArgs.noList = 1;
@@ -187,9 +189,13 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
-/*Set the alarm timer if some problem occurs in UNIX socket*/
+/*Set the alarm timer if some problem occurs in UNIX socket, etc.*/
+		struct sigaction alarmAct;
+		memset(&alarmAct, 0, sizeof(alarmAct));
+		alarmAct.sa_handler = alarmHandler;
+		sigaction(SIGALRM, &alarmAct, 0);
+
 		alarm(globalArgs.timeOut+1);
-		signal(SIGALRM, alarmHandler);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
