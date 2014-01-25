@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-const char *VERSION = "0.83";
+const char *VERSION = "0.84";
 
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
@@ -128,7 +128,10 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 		exit(UNKNOWN);
 	}
 }
-
+/*
+	This finction hangle alarm signal (SIGALRM)
+	if some problem occurs in UNIX socket
+*/
 void alarmHandler()
 {
 	snmp_close_sessions();
