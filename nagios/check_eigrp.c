@@ -54,7 +54,7 @@ void version()
 	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
 	exit(OK);
 }
-/*This function open SNMP session to router*/
+/*This function open SNMP session (only structure in memory) to router*/
 void* snmpopen( char* community, const char* hostname, int timeout){
 	
 	struct snmp_session session, *session_p;
@@ -87,7 +87,7 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 		exit(UNKNOWN);
 	}
 }
-/*Here we get some information from device*/
+/*Here we get some information from device (send and resive SNMP messages)*/
 void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize){
 
 	netsnmp_ds_set_boolean(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_QUICK_PRINT, 1);
