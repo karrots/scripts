@@ -4,15 +4,8 @@
 #include <unistd.h>
 #include <signal.h>
 
-<<<<<<< HEAD
-const char *VERSION = "0.83";
-=======
 const char *VERSION = "0.85";
-<<<<<<< HEAD
->>>>>>> beta
 
-=======
->>>>>>> beta
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
@@ -196,17 +189,6 @@ int main(int argc, char *argv[])
 	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
 		usage(argv[0]);
 	} else {
-<<<<<<< HEAD
-/*Set the alarm timer if some problem occurs in UNIX socket*/
-		alarm(globalArgs.timeOut+1);
-		void alarmHandler()
-		{
-			snmp_close_sessions();
-			printf("UNKNOWN: Plugin timeout exceeded for %d seconds.\n", globalArgs.timeOut);
-			exit(UNKNOWN);
-		}
-		signal(SIGALRM, alarmHandler);
-=======
 /*Set the alarm timer if some problem occurs in UNIX socket, etc.*/
 		struct sigaction alarmAct;
 		memset(&alarmAct, 0, sizeof(alarmAct));
@@ -214,7 +196,6 @@ int main(int argc, char *argv[])
 		sigaction(SIGALRM, &alarmAct, 0);
 
 		alarm(globalArgs.timeOut+1);
->>>>>>> beta
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
