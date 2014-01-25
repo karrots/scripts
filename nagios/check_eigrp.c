@@ -36,7 +36,7 @@ void usage(char* name)
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
 	printf("\t-p, \tSpecify the neighbors count of router;\n");
-	printf("\t-t, \tSpecify the timeout of plugin, default is 3 seconds;\n");
+	printf("\t-t, \tSpecify the timeout of plugin, default is 3 sec, maximum 60 sec;\n");
 	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
@@ -130,7 +130,7 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 }
 /*
 	This finction hangle alarm signal (SIGALRM)
-	if some problem occurs in UNIX socket
+	if some problem occurs in UNIX socket, etc.
 */
 void alarmHandler()
 {
