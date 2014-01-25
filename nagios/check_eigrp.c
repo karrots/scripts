@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-const char *VERSION = "0.84";
+const char *VERSION = "0.85";
 
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
@@ -36,7 +36,7 @@ void usage(char* name)
 	printf("\t-c, \tSpecify the SNMP community of router;\n");
 	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
 	printf("\t-p, \tSpecify the neighbors count of router;\n");
-	printf("\t-t, \tSpecify the timeout of plugin, default is 3 sec, maximum 60 sec;\n");
+	printf("\t-t, \tSpecify the timeout of plugin, default is 3 sec, max 60 sec;\n");
 	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
@@ -141,7 +141,7 @@ void alarmHandler()
 
 int main(int argc, char *argv[])
 {
-/*Inicialization of command-line arguments*/
+/*Default value of command-line arguments*/
 	globalArgs.HOSTNAME=NULL;
 	globalArgs.COMMUNITY=NULL;
 	globalArgs.NEIGHBORS=NULL;
@@ -232,21 +232,21 @@ int main(int argc, char *argv[])
 			int i, peerNum;
 /*Create buffer for SNMP output value (midlBuff).*/
 			char midlBuff[18];
-			size_t sizeOfBuffer = sizeof(midlBuff);
+			sizeOfBuffer = sizeof(midlBuff);
 			memset(midlBuff, 0, sizeOfBuffer);
 /*Buffers and mutex for IOS version check*/
 			char* iosver = midlBuff;
-			char buffer[4];
+			char buffer[3];
 			int mutex=0;
 /*
 	Get and check the IOS version for IP address converting
 */
 			snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeOfBuffer);
-			strncpy(buffer, iosver, 3);
-			buffer[3]='\0';
+			strncpy(buffer, iosver+1, 2);
+			buffer[2]='\0';
 /*If the major version of IOS is 15 then check minor version*/
-			if (strcmp(buffer, "\"15") == 0) {
-				memset(buffer, 0, 3);
+			if (strcmp(buffer, "15") == 0) {
+				memset(buffer, 0, 2);
 				snprintf(buffer, 2, "%c", iosver[4]);
 /*If minor version is 3 or higher then change mutex*/
 				if (atoi(buffer) >= 3)
@@ -255,37 +255,38 @@ int main(int argc, char *argv[])
 /*
 	Get IP addresses
 */
+			memset(snmpOID, 0, 100);
+			strcpy(snmpOID, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
+			strcat(snmpOID, globalArgs.AS);
+			strcat(snmpOID, ".");
+
 			peerNum = atoi(peercount);
 			char* peerip;
 
 			for (i = 0; i<peerNum; i++) {
-				memset(snmpOID, 0, 100);
-				memset(peercount, 0, 12);
 				memset(midlBuff, 0, 18);
 				peerip = midlBuff;
 
-				strcpy(snmpOID, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
-				strcat(snmpOID, globalArgs.AS);
-				strcat(snmpOID, ".");
-
-				snprintf(peercount, 12, "%d", i);
-
-				snmpget(session, strcat(snmpOID, peercount), peerip, sizeOfBuffer);
+				snprintf(snmpOID+33+strlen(globalArgs.AS), 12, "%d", i);
+				snmpget(session, snmpOID, peerip, sizeOfBuffer);
 /*
 	Print the list of current EIGRP peers.
 */
 				printf("\t%d: ", i+1);
 				if (mutex == 1)
-					printf("%s", peerip);
+					printf("%.*s", strlen(peerip)-2,peerip+1);
 				else {
 					int l;
-					printf("\"");
 					while ((peerip = strtok(peerip, "\" ")) != NULL){
 						sscanf(peerip,"%x",&l);
-						printf("%d.", l);
+						if (mutex < 3)
+							printf("%d.", l);
+						else
+							printf("%d", l);
 						peerip = NULL;
+						mutex++;
 					}
-					printf("\"");
+					mutex=0;
 				}
 				printf("\n");
 			}
