@@ -5,7 +5,6 @@
 #include <signal.h>
 
 const char *VERSION = "0.85";
-
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
 	OK,
