@@ -3,8 +3,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
 #include <signal.h>
-
-const char *VERSION = "0.85";
+#define VERSION 0.86
 
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
