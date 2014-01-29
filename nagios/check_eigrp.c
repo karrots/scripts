@@ -3,7 +3,12 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <unistd.h>
 #include <signal.h>
-#define VERSION "0.86"
+
+#define VERSION "0.87"
+/*SNMP oids*/
+#define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
+#define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
+#define probeSoftwareRev "1.3.6.1.2.1.16.19.2.0"
 
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
@@ -42,11 +47,11 @@ void usage(char* name)
 /*Print the version of plugin*/
 void version()
 {
-	printf("check_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
+	printf("\ncheck_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
 	printf("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
-	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n");
+	printf("Written by Tiunov Igor <igortiunov@gmail.com>\n\n");
 	exit(OK);
 }
 /*This function open SNMP session (only structure in memory) to router*/
@@ -205,7 +210,7 @@ int main(int argc, char *argv[])
 		size_t sizeOfBuffer = sizeof(peercount);
 		memset(peercount, 0, sizeOfBuffer);
 
-		strcpy(snmpOID, "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0.");
+		strcpy(snmpOID, cEigrpNbrCount);
 		strcat(snmpOID, globalArgs.AS);
 /*
 	Get the number of current EIGRP peers.
@@ -240,7 +245,7 @@ int main(int argc, char *argv[])
 /*
 	Get and check the IOS version for IP address converting
 */
-			snmpget(session, "1.3.6.1.2.1.16.19.2.0", iosver, sizeOfBuffer);
+			snmpget(session, probeSoftwareRev, iosver, sizeOfBuffer);
 			strncpy(buffer, iosver+1, 2);
 			buffer[2]='\0';
 /*If the major version of IOS is 15 then check minor version*/
@@ -255,7 +260,7 @@ int main(int argc, char *argv[])
 	Get IP addresses
 */
 			memset(snmpOID, 0, 100);
-			strcpy(snmpOID, "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0.");
+			strcpy(snmpOID, cEigrpPeerAddr);
 			strcat(snmpOID, globalArgs.AS);
 			strcat(snmpOID, ".");
 
@@ -273,7 +278,7 @@ int main(int argc, char *argv[])
 */
 				printf("\t%d: ", i+1);
 				if (mutex == 1)
-					printf("%.*s", strlen(peerip)-2,peerip+1);
+					printf("%.*s", strlen(peerip)-2, peerip+1);
 				else {
 					int l;
 					while ((peerip = strtok(peerip, "\" ")) != NULL){
