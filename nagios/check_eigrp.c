@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
-#include <unistd.h>
+#include <getopt.h>
 #include <signal.h>
 
-#define VERSION "0.88"
+#define VERSION "0.90"
 /*SNMP oids*/
 #define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
 #define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
@@ -26,24 +27,39 @@ struct globalArgs_t {
 	char		*COMMUNITY;	/*SNMP Community;*/
 	const char 	*NEIGHBORS;	/*Neighbors count;*/
 	const char 	*AS;		/*AS number of monitoring router;*/
-	int		noList;		/*Get or not list of neighbors (disabled by default).*/
+	int		Verbose;		/*Get or not list of neighbors (disabled by default).*/
 	int		timeOut;	/*Set timeout for plugin, default is 3 seconds.*/
 } globalArgs;
 
-const char *optString = "H:c:p:a:t:lhv";
+const char *optString = "H:C:n:a:t:vhV";
+int longIndex = 0;
+
+const struct option longOpts[] = {
+    { "hostname", required_argument, NULL, 'H' },
+    { "community", required_argument, NULL, 'C' },
+    { "neighbors", required_argument, NULL, 'n' },
+    { "asnumber", required_argument, NULL, 'a' },
+    { "timeout", required_argument, NULL, 't' },
+    { "verbose", no_argument, NULL, 'v' },
+	{ "help", no_argument, NULL, 'h' },
+	{ "version", no_argument, NULL, 'V' },
+    { NULL, no_argument, NULL, 0 }
+};
 
 /*Usage function, for printing help*/
-void usage(char* name)
+void usage()
 {
-	printf("Usage: %s -H <hostipaddress> -c <community> -p <neighbors> -a <EIGRP AS number>\n", name);
-	printf("Options:\n\t-h, \tShow this help message;\n");
-	printf("\t-v, \tPrint the version of plugin;\n");
-	printf("\t-H, \tSpecify the hostname of router;\n");
-	printf("\t-c, \tSpecify the SNMP community of router;\n");
-	printf("\t-a, \tSpecify the EIGRP AS number of router;\n");
-	printf("\t-p, \tSpecify the neighbors count of router;\n");
-	printf("\t-t, \tSpecify the timeout of plugin, default is 3 sec, max 60 sec;\n");
-	printf("\t-l, \tSpecify this key if you need to get a \n\t\tlist of neighbors (disabled by default).\n\n");
+	printf("\ncheck_eigrp (Nagios Plugin) %s\nCopyright (C) 2014 Tiunov Igor\n", VERSION);
+	printf("\nCheck status of EIGRP protocol and obtain neighbors count via SNMP\n\n\n");
+	printf("Usage:\ncheck_eigrp -H <hostipaddress> -n <neighbors> -a <EIGRP AS number>\n[-C <community>] [-v]\n\n");
+	printf("Options:\n -h,--help\n   Show this help message;\n");
+	printf(" -V,--version\n   print the version of plugin;\n");
+	printf(" -H,--hostname=ADDRESS\n   specify the hostname of router,\n   you can specify a port number by this notation:\"ADDRESS:PORT\"\n");
+	printf(" -C,--community=STRING\n   specify the SNMP community of router;\n");
+	printf(" -a,--asnumber=INTEGER\n   specify the EIGRP AS number of router;\n");
+	printf(" -n,--neighbors=INTEGER\n   specify the neighbors count of router;\n");
+	printf(" -t,--timeout=INTEGER\n   specify the timeout of plugin,\n   default is 3 sec, max 60 sec;\n");
+	printf(" -v,--verbose\n   specify this key if you need to get a\n   list of neighbors (disabled by default).\n\n");
 	exit(UNKNOWN);
 }
 /*Print the version of plugin*/
@@ -57,7 +73,7 @@ void version()
 	exit(OK);
 }
 /*This function open SNMP session (only structure in memory) to router*/
-void* snmpopen( char* community, const char* hostname, int timeout){
+void* snmpopen(const char* hostname, int timeout){
 	
 	struct snmp_session session, *session_p;
 		
@@ -66,9 +82,10 @@ void* snmpopen( char* community, const char* hostname, int timeout){
 	snmp_sess_init( &session );
 	
 	session.peername = strdup(hostname);
+
 	session.version = SNMP_VERSION_2c;
-	session.community = (u_char*) community;
-	session.community_len = strlen(community);
+	session.community = (u_char*) globalArgs.COMMUNITY;
+	session.community_len = strlen(globalArgs.COMMUNITY);
 /*
 	One attempt plus session.retries, therefore
 	GLOBAL timeout = session.timeout*(1+session.retries)
@@ -135,7 +152,7 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 	}
 }
 /*Print interface description*/
-void printintdesc(void* session, int count, int mutex){
+void printIntDesc(void* session, int count, int mutex){
 	char snmpOID[100];
 	char buffer[100];
 	memset(snmpOID, 0, sizeof(snmpOID));
@@ -171,23 +188,23 @@ int main(int argc, char *argv[])
 {
 /*Default value of command-line arguments*/
 	globalArgs.HOSTNAME=NULL;
-	globalArgs.COMMUNITY=NULL;
+	globalArgs.COMMUNITY="public";
 	globalArgs.NEIGHBORS=NULL;
 	globalArgs.AS=NULL;
 	globalArgs.timeOut=3;
-	globalArgs.noList=0;
+	globalArgs.Verbose=0;
 
 /*Command-line arguments parsing*/
 	int opt;
-	while((opt = getopt(argc, argv, optString)) != -1){
+	while((opt = getopt_long(argc, argv, optString, longOpts, &longIndex)) != -1){
 		switch( opt ) {
 			case 'H':
 				globalArgs.HOSTNAME = optarg;
 				break;
-			case 'c':
+			case 'C':
 				globalArgs.COMMUNITY = optarg;
 				break;
-			case 'p':
+			case 'n':
 				globalArgs.NEIGHBORS = optarg;
 				break;
 			case 'a':
@@ -199,23 +216,23 @@ int main(int argc, char *argv[])
 				else if (globalArgs.timeOut > 60)
 					globalArgs.timeOut = 60;
 				break;
-			case 'l':
-				globalArgs.noList = 1;
-				break;
 			case 'v':
+				globalArgs.Verbose = 1;
+				break;
+			case 'V':
 				version();
 				break;
 			case 'h':
-				usage(argv[0]);
+				usage();
 				break;
 			default:
-				usage(argv[0]);
+				usage();
 				break;
 		}
 	}
 
-	if (globalArgs.HOSTNAME==NULL || globalArgs.COMMUNITY==NULL ||  globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
-		usage(argv[0]);
+	if (globalArgs.HOSTNAME==NULL || globalArgs.NEIGHBORS==NULL || globalArgs.AS==NULL){
+		usage();
 	} else {
 /*Set the alarm timer if some problem occurs (in UNIX socket, etc.)*/
 		struct sigaction alarmAct;
@@ -223,9 +240,9 @@ int main(int argc, char *argv[])
 		alarmAct.sa_handler = alarmHandler;
 		sigaction(SIGALRM, &alarmAct, 0);
 
-		alarm(globalArgs.timeOut+1);
+		alarm(globalArgs.timeOut+1*atoi(globalArgs.NEIGHBORS));
 /*Create SNMP session*/
-		void* session = snmpopen(globalArgs.COMMUNITY, globalArgs.HOSTNAME, globalArgs.timeOut);
+		void* session = snmpopen(globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
 		char snmpOID[100];
 		memset(snmpOID, 0, sizeof(snmpOID));
@@ -255,7 +272,7 @@ int main(int argc, char *argv[])
 /*
 	Get the list of current EIGRP peers.
 */		
-		if ((exitcode == WARNING || exitcode == OK) && globalArgs.noList == 1){
+		if ((exitcode == WARNING || exitcode == OK) && globalArgs.Verbose == 1){
 /*Some integers for counts*/
 			int i, peerNum;
 /*Create buffer for SNMP output value (midlBuff).*/
@@ -265,16 +282,17 @@ int main(int argc, char *argv[])
 /*Buffers and mutex for IOS version check*/
 			char* iosver = midlBuff;
 			char buffer[3];
+			memset(buffer, 0, sizeof(buffer));
 			int mutex=0;
 /*
 	Get and check the IOS version for IP address converting
 */
 			snmpget(session, probeSoftwareRev, iosver, sizeOfBuffer);
 			strncpy(buffer, iosver+1, 2);
-			buffer[2]='\0';
+
 /*If the major version of IOS is 15 then check minor version*/
 			if (strcmp(buffer, "15") == 0) {
-				memset(buffer, 0, 2);
+				memset(buffer, 0, sizeof(buffer));
 				snprintf(buffer, 2, "%c", iosver[4]);
 /*If minor version is 3 or higher then change mutex*/
 				if (atoi(buffer) >= 3)
@@ -315,7 +333,7 @@ int main(int argc, char *argv[])
 					mutex=0;
 				}
 				/*Print the interface name*/
-				printintdesc(session, i, mutex);
+				printIntDesc(session, i, mutex);
 				printf("\n");
 			}
 		}
