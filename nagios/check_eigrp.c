@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include <signal.h>
 
-#define VERSION "0.87"
+#define VERSION "0.88"
 /*SNMP oids*/
 #define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
 #define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
 #define probeSoftwareRev "1.3.6.1.2.1.16.19.2.0"
+#define ifDescr "1.3.6.1.2.1.2.2.1.2."
+#define cEigrpPeerIfIndex "1.3.6.1.4.1.9.9.449.1.4.1.1.4."
 
 /*Nagios plugin exit status:*/
 enum EXITCODE { 
@@ -132,6 +134,28 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 		exit(UNKNOWN);
 	}
 }
+/*Print interface description*/
+void printintdesc(void* session, int count, int mutex){
+	char snmpOID[100];
+	char buffer[100];
+	memset(snmpOID, 0, sizeof(snmpOID));
+	memset(buffer, 0, sizeof(buffer));
+	
+	strcpy(snmpOID, cEigrpPeerIfIndex);
+	snprintf(snmpOID+30, 6, "%d", mutex*65536);
+	strcat(snmpOID, ".");
+	strcat(snmpOID, globalArgs.AS);
+	strcat(snmpOID, ".");
+	snprintf(snmpOID+33+4*mutex+strlen(globalArgs.AS), 12, "%d", count);
+	snmpget(session, snmpOID, buffer, sizeof(buffer));
+
+	memset(snmpOID, 0, sizeof(snmpOID));
+	strcpy(snmpOID, ifDescr);
+	strcat(snmpOID, buffer);
+	snmpget(session, snmpOID, buffer, sizeof(buffer));
+
+	printf(" %s", buffer);
+}
 /*
 	This finction hangle alarm signal (SIGALRM)
 	if some problem occurs (in UNIX socket, etc).
@@ -235,7 +259,7 @@ int main(int argc, char *argv[])
 /*Some integers for counts*/
 			int i, peerNum;
 /*Create buffer for SNMP output value (midlBuff).*/
-			char midlBuff[18];
+			char midlBuff[100];
 			sizeOfBuffer = sizeof(midlBuff);
 			memset(midlBuff, 0, sizeOfBuffer);
 /*Buffers and mutex for IOS version check*/
@@ -266,20 +290,20 @@ int main(int argc, char *argv[])
 
 			peerNum = atoi(peercount);
 			char* peerip;
-
+			
 			for (i = 0; i<peerNum; i++) {
-				memset(midlBuff, 0, 18);
+				memset(midlBuff, 0, sizeOfBuffer);
 				peerip = midlBuff;
 
 				snprintf(snmpOID+33+strlen(globalArgs.AS), 12, "%d", i);
 				snmpget(session, snmpOID, peerip, sizeOfBuffer);
-/*
-	Print the list of current EIGRP peers.
-*/
+/*Print the list of current EIGRP peers.*/
 				printf("\t%d: ", i+1);
-				if (mutex == 1)
+				if (mutex == 1){
 					printf("%.*s", strlen(peerip)-2, peerip+1);
-				else {
+					/*Print the interface name*/
+					printintdesc(session, i, mutex);
+				} else {
 					int l;
 					while ((peerip = strtok(peerip, "\" ")) != NULL){
 						sscanf(peerip,"%x",&l);
@@ -291,6 +315,8 @@ int main(int argc, char *argv[])
 						mutex++;
 					}
 					mutex=0;
+					/*Print the interface name*/
+					printintdesc(session, i, mutex);
 				}
 				printf("\n");
 			}
