@@ -299,11 +299,9 @@ int main(int argc, char *argv[])
 				snmpget(session, snmpOID, peerip, sizeOfBuffer);
 /*Print the list of current EIGRP peers.*/
 				printf("\t%d: ", i+1);
-				if (mutex == 1){
+				if (mutex == 1)
 					printf("%.*s", strlen(peerip)-2, peerip+1);
-					/*Print the interface name*/
-					printintdesc(session, i, mutex);
-				} else {
+				else {
 					int l;
 					while ((peerip = strtok(peerip, "\" ")) != NULL){
 						sscanf(peerip,"%x",&l);
@@ -315,9 +313,9 @@ int main(int argc, char *argv[])
 						mutex++;
 					}
 					mutex=0;
-					/*Print the interface name*/
-					printintdesc(session, i, mutex);
 				}
+				/*Print the interface name*/
+				printintdesc(session, i, mutex);
 				printf("\n");
 			}
 		}
