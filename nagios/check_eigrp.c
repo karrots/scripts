@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <signal.h>
 
-#define VERSION "0.90"
+#define VERSION "0.91"
 /*SNMP oids*/
 #define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
 #define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
@@ -35,15 +35,15 @@ const char *optString = "H:C:n:a:t:vhV";
 int longIndex = 0;
 
 const struct option longOpts[] = {
-    { "hostname", required_argument, NULL, 'H' },
-    { "community", required_argument, NULL, 'C' },
-    { "neighbors", required_argument, NULL, 'n' },
-    { "asnumber", required_argument, NULL, 'a' },
-    { "timeout", required_argument, NULL, 't' },
-    { "verbose", no_argument, NULL, 'v' },
+	{ "hostname", required_argument, NULL, 'H' },
+	{ "community", required_argument, NULL, 'C' },
+	{ "neighbors", required_argument, NULL, 'n' },
+	{ "asnumber", required_argument, NULL, 'a' },
+	{ "timeout", required_argument, NULL, 't' },
+	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
-    { NULL, no_argument, NULL, 0 }
+	{ NULL, no_argument, NULL, 0 }
 };
 
 /*Usage function, for printing help*/
@@ -114,9 +114,7 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 	oid anOID[MAX_OID_LEN];
 	size_t anOID_len = MAX_OID_LEN;
 	struct variable_list *vars;
-/*
-	PDU is a snmp protocol data unit.
-*/
+/*PDU is a snmp protocol data unit.*/
 	struct snmp_pdu *pdu;
 	struct snmp_pdu *response;	
 
@@ -159,11 +157,11 @@ void printIntDesc(void* session, int count, int mutex){
 	memset(buffer, 0, sizeof(buffer));
 	
 	strcpy(snmpOID, cEigrpPeerIfIndex);
-	snprintf(snmpOID+30, 6, "%d", mutex*65536);
+	snprintf(snmpOID+strlen(cEigrpPeerIfIndex), 6, "%d", mutex*65536);
 	strcat(snmpOID, ".");
 	strcat(snmpOID, globalArgs.AS);
 	strcat(snmpOID, ".");
-	snprintf(snmpOID+33+4*mutex+strlen(globalArgs.AS), 12, "%d", count);
+	snprintf(snmpOID+strlen(snmpOID), 12, "%d", count);
 	snmpget(session, snmpOID, buffer, sizeof(buffer));
 
 	memset(snmpOID, 0, sizeof(snmpOID));
@@ -288,8 +286,8 @@ int main(int argc, char *argv[])
 	Get and check the IOS version for IP address converting
 */
 			snmpget(session, probeSoftwareRev, iosver, sizeOfBuffer);
+/*Get the major version of IOS*/
 			strncpy(buffer, iosver+1, 2);
-
 /*If the major version of IOS is 15 then check minor version*/
 			if (strcmp(buffer, "15") == 0) {
 				memset(buffer, 0, sizeof(buffer));
@@ -313,9 +311,10 @@ int main(int argc, char *argv[])
 				memset(midlBuff, 0, sizeOfBuffer);
 				peerip = midlBuff;
 
-				snprintf(snmpOID+33+strlen(globalArgs.AS), 12, "%d", i);
+				/*Set peercount to correct oid position*/
+				snprintf(snmpOID+strlen(cEigrpPeerAddr)+1+strlen(globalArgs.AS), 12, "%d", i);
 				snmpget(session, snmpOID, peerip, sizeOfBuffer);
-/*Print the list of current EIGRP peers.*/
+				/*Print the list of current EIGRP peers.*/
 				printf("\t%d: ", i+1);
 				if (mutex == 1)
 					printf("%.*s", strlen(peerip)-2, peerip+1);
