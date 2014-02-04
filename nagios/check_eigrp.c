@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <signal.h>
 
-#define VERSION "0.91"
+#define VERSION "0.92"
 /*SNMP oids*/
 #define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
 #define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
@@ -77,8 +77,6 @@ void* snmpopen(const char* hostname, int timeout){
 	
 	struct snmp_session session, *session_p;
 		
-	init_snmp("check_eigrp");
-		
 	snmp_sess_init( &session );
 	
 	session.peername = strdup(hostname);
@@ -129,7 +127,8 @@ void snmpget (void *snmpsession, char *oidvalue, char *buffer, size_t buffersize
 		if (response->errstat == SNMP_ERR_NOERROR) {
 			vars = response->variables;
 			if (snprint_value(buffer, buffersize, vars->name, vars->name_length, vars) == -1) {
-				printf("UNKNOWN: May be this router has not EIGRP protocol?\n");
+				printf("UNKNOWN: May be this router has not EIGRP protocol? |\n");
+				print_value(vars->name, vars->name_length, vars);
 				snmp_free_pdu(response);
 				snmp_close(snmpsession);
 				exit(UNKNOWN);
