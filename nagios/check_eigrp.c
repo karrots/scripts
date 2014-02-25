@@ -5,7 +5,7 @@
 #include <getopt.h>
 #include <signal.h>
 
-#define VERSION "0.92"
+#define VERSION "0.93"
 /*SNMP oids*/
 #define cEigrpNbrCount "1.3.6.1.4.1.9.9.449.1.2.1.1.2.0."
 #define cEigrpPeerAddr "1.3.6.1.4.1.9.9.449.1.4.1.1.3.0."
@@ -91,6 +91,8 @@ void* snmpopen(const char* hostname, int timeout){
 */
 	session.retries = 2;
 	session.timeout = timeout*1000000/(session.retries+1);
+
+    snmp_enable_stderrlog();
 
 	session_p = snmp_open(&session);
 
@@ -237,7 +239,7 @@ int main(int argc, char *argv[])
 		alarmAct.sa_handler = alarmHandler;
 		sigaction(SIGALRM, &alarmAct, 0);
 
-		alarm(globalArgs.timeOut+1*atoi(globalArgs.NEIGHBORS));
+		alarm(globalArgs.timeOut*atoi(globalArgs.NEIGHBORS)+1);
 /*Create SNMP session*/
 		void* session = snmpopen(globalArgs.HOSTNAME, globalArgs.timeOut);
 /*Create buffer for snmp OID*/
